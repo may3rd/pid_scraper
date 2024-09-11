@@ -2,18 +2,16 @@
 // Start JQuery code
 // -----------------------------------------------------------------------------
 
-
-var previous_selected_rows = 0;
-var canvas = new fabric.Canvas("canvas");
-
-canvas.selection = false; // disable group selection
-
 var image_height = 100;
 var image_width = 100;
+var previous_selected_rows = 0;
+
+const canvas = new fabric.Canvas("canvas");
+canvas.selection = false; // disable group selection
 
 // define utlities for canvas displaying
 
-var canvasUtils = {
+const canvasUtils = {
     // Constants
     maxZoom: function () { return 5.0; },
     minZoom: function () {
@@ -24,16 +22,17 @@ var canvasUtils = {
         return Math.max(width / image_width, height / image_height);;
     },
 
-    // Functions
-
     // zoom canvas to input value
     updateZoomButtons: function (zoom) {
-        if (zoom === canvasUtils.minZoom()) {
+        const minZoom = canvasUtils.minZoom();
+        const maxZoom = canvasUtils.maxZoom();
+
+        if (zoom === minZoom) {
             // disable zoom out and reset button
             $('#zoom-in').removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
             $("#zoom-out").addClass('disabled').addClass('btn-secondary').addClass('btn-primary');
             $("#zoom-reset").addClass('disabled').addClass('btn-secondary').addClass('disabtn-primarybled');
-        } else if (zoom === canvasUtils.maxZoom()) {
+        } else if (zoom === maxZoom) {
             // disable zoom in button
             $('#zoom-in').addClass('disabled').addClass('btn-secondary').addClass('btn-primary');
             $("#zoom-out").removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
@@ -45,8 +44,6 @@ var canvasUtils = {
             $("#zoom-reset").removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
         }
 
-        const minZoom = canvasUtils.minZoom();
-        const maxZoom = canvasUtils.maxZoom();
         document.getElementById('zoom-range').min = minZoom;
         document.getElementById('zoom-range').max = maxZoom;
         document.getElementById('zoom-range').step = (maxZoom - minZoom) / 100;
@@ -57,16 +54,13 @@ var canvasUtils = {
         const container = $("#canvas-container");
         const width = container.width();
         const height = container.height();
-
         //zoom *= 0.999 ** factor;
         zoom = Math.min(zoom, this.maxZoom());
         zoom = Math.max(zoom, this.minZoom());
         canvas.zoomToPoint({ x: width / 2, y: height / 2 }, zoom);
         $("#zoom-range").val(zoom);
-
         // update zoom buttons
         this.updateZoomButtons(zoom);
-
         canvas.renderAll();
     },
 
@@ -79,28 +73,23 @@ var canvasUtils = {
         const height = container.height();
 
         zoom = this.minZoom();
-
         originalX = Math.floor((width - image_width * zoom) / 2);
         originalY = Math.floor((height - image_height * zoom) / 2);
-
         vpt[4] = 0;
         vpt[5] = 0;
-
         $("#zoom-range").val(zoom);
-
         canvas.setZoom(zoom);
         canvas.calcOffset();
         canvas.renderAll();
-
         this.updateZoomButtons(zoom);
     },
 
     // adding image and bounding box from inference model to canves
 
     addItemsToCanvas: function (image) {
-        var buttons = $("div#zoom-btn-container button");
+        const buttons = $("div#zoom-btn-container button");
 
-        const hex = [
+        const hexColor = [
             "#FF3838",
             "#2C99A8",
             "#FF701F",
@@ -138,22 +127,20 @@ var canvasUtils = {
         image_height = canvasImg.height;
 
         canvas.add(canvasImg);
-
         // for each item in jsonData, add bbox to canvas
         jsonData.forEach((item) => {
-
-            var box = new fabric.Rect({
+            const box = new fabric.Rect({
                 left: item.Left,
                 top: item.Top,
                 fill: "rgba(0,0,0,0)",
-                stroke: hex[item.CategoryID % hex.length],
+                stroke: hexColor[item.CategoryID % hexColor.length],
                 strokeWidth: 3,
                 width: item.Width,
                 height: item.Height,
                 selectable: false,
                 opacity: 1.0,
             });
-            //console.log("Add box to canvas", item.index, hex[item.CategoryID % hex.length]);
+            //console.log("Add box to canvas", item.index, hexColor[item.CategoryID % hexColor.length]);
             canvas.add(box);
         });
 
@@ -165,8 +152,7 @@ var canvasUtils = {
 
     onImageLoad: function (image) {
         // image is finished loading
-
-        var imageSrc = $(image).attr("src");
+        const imageSrc = $(image).attr("src");
 
         if (imageSrc.slice(-15) !== "gcmethumb-3.png") {
             this.addItemsToCanvas(image);
@@ -188,10 +174,10 @@ var canvasUtils = {
         // TODO
         if (previous_selected_rows > 0) {
             // remove last object
-            let objects = canvas.getObjects();
-            var rect = objects[objects.length - 1];
-            canvas.remove(rect);
+            const objects = canvas.getObjects();
+            const rect = objects[objects.length - 1];
 
+            canvas.remove(rect);
             objects.forEach((index, rect) => {
                 if (index > 0) {
                     rect.opacity = 0.0;
@@ -201,7 +187,7 @@ var canvasUtils = {
 
         if (selectd_rows.length > 0) {
             // Create new rectangle to cover all image
-            var rect = new fabric.Rect({
+            const rect = new fabric.Rect({
                 left: 0,
                 top: 0,
                 fill: 'black',
@@ -215,9 +201,8 @@ var canvasUtils = {
 
             // create clipPaths from selected_rows
             selectd_rows.forEach((idx) => {
-                //
                 item = jsonData[idx];
-                var box = new fabric.Rect({
+                const box = new fabric.Rect({
                     left: item.Left - image_width / 2,
                     top: item.Top - image_height / 2,
                     width: item.Width,
@@ -234,7 +219,6 @@ var canvasUtils = {
 
             canvas.add(rect);
         }
-
         // save current select for next operation
         previous_selected_rows = selectd_rows.length;
         canvas.renderAll();
@@ -245,9 +229,9 @@ var canvasUtils = {
         var onRows = [];
 
         table.rows().every(function () {
-            var $row = $(this.node());
-            var $btn = $row.find('.toggle-btn');
-            var itemNo = this.data()[1];
+            const $row = $(this.node());
+            const $btn = $row.find('.toggle-btn');
+            const itemNo = this.data()[1];
 
             if ($btn.data('status') === 'on') {
                 onRows.push(Number(itemNo));
@@ -259,7 +243,7 @@ var canvasUtils = {
         // Further processing with onRows
         const objects = canvas.getObjects();
 
-        let last_index = objects.length;
+        const last_index = objects.length;
 
         if (previous_selected_rows > 0) {
             last_index = last_index - 1;
@@ -282,21 +266,19 @@ function updateTreeView(tree, table) {
     var parent_nodes = [];
 
     table.rows().every(function () {
-        var $row = $(this.node());
-        var $btn = $row.find('.toggle-btn');
-        var status = $btn.data('status') === 'on' ? true : false;
-        var text = $row.find('.item-object').text() + ", " + $row.find('.item-text').text();
-
+        const $row = $(this.node());
+        const $btn = $row.find('.toggle-btn');
+        const status = $btn.data('status') === 'on' ? true : false;
+        const text = $row.find('.item-object').text() + ", " + $row.find('.item-text').text();
         //console.log(text, status);
-        var nodes = $('#tree').treeview('search', [text, {
+        const nodes = $('#tree').treeview('search', [text, {
             ignoreCase: true,     // case insensitive
             exactMatch: true,    // like or equals
             revealResults: false,  // reveal matching nodes
         }]);
 
-        var node = nodes[0];
+        const node = nodes[0];
         //console.log("find for ", text, ": found ", node);
-
         if (node) {
             //console.log(node.nodeId, ' to ', status);
             if (status === true) {
@@ -306,7 +288,7 @@ function updateTreeView(tree, table) {
             }
         }
 
-        var parent = $('#tree').treeview('getParent', node.nodeId);
+        const parent = $('#tree').treeview('getParent', node.nodeId);
 
         if (!parent_nodes.includes(parent)) {
             parent_nodes.push(parent);
@@ -316,7 +298,7 @@ function updateTreeView(tree, table) {
     // check the treeview for parent nodes
     //console.log(parent_nodes);
     for (var i = 0; i < parent_nodes.length; i++) {
-        var childern = parent_nodes[i].nodes;
+        const childern = parent_nodes[i].nodes;
         var count = 0;
 
         for (var j = 0; j < childern.length; j++) {
@@ -331,7 +313,6 @@ function updateTreeView(tree, table) {
             $('#tree').treeview('uncheckNode', [parent_nodes[i].nodeId, { silent: true }]);
         }
     }
-
     // update display
     canvasUtils.displayBBX(table);
 }
@@ -342,8 +323,8 @@ function updateOnOffMaster(table) {
     var off_status_count = 0;
 
     table.rows().every(function () {
-        var $row = $(this.node());
-        var $btn = $row.find('.toggle-btn');
+        const $row = $(this.node());
+        const $btn = $row.find('.toggle-btn');
         btnStatus.push($btn.data('status'))
     });
 
@@ -377,32 +358,30 @@ function toggleOnOffButton($btn, table, status) {
         $btn.removeClass('btn-primary')
         $btn.addClass('btn-secondary')
     }
-
     updateOnOffMaster(table);
 }
 
 function updateOnOffButton(data, table, status) {
-    var tree_index = Number(data.tags[0]);
+    const tree_index = Number(data.tags[0]);
 
     // toggle btn
     table.rows().every(function () {
-        var $row = $(this.node());
-        var $btn = $row.find('.toggle-btn');
-        //var text = $row.find('.item-object').text() + ", " + $row.find('.item-text').text();
-        var index = Number($row.find('.item-index').text())
+        const $row = $(this.node());
+        const $btn = $row.find('.toggle-btn');
+        //const text = $row.find('.item-object').text() + ", " + $row.find('.item-text').text();
+        const index = Number($row.find('.item-index').text())
 
         //console.log("Check if : ", tree_index, index);
         if (index === tree_index) {
             toggleOnOffButton($btn, table, status);
         }
     });
-
     // update display
     canvasUtils.displayBBX(table);
 }
 
 function updateDeselectAllButton(table) {
-    var count = table.rows({ selected: true }).count();
+    const count = table.rows({ selected: true }).count();
 
     if (count > 0) {
         $('#deselect-all').removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
@@ -456,7 +435,7 @@ $(document).ready(function () {
     // Event handler for canvas
 
     canvas.on("mouse:wheel", function (opt) {
-        var delta = opt.e.deltaY;
+        const delta = opt.e.deltaY;
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** delta;
         zoom = Math.min(zoom, canvasUtils.maxZoom());
@@ -464,13 +443,13 @@ $(document).ready(function () {
         canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
         zoomRange.val(zoom);
         //
-        var vpt = this.viewportTransform;
+        const vpt = this.viewportTransform;
 
         // Calculate the maximum allowed values
-        var maxLeft = 0;
-        var maxTop = 0;
-        var maxRight = -(image_width * canvas.getZoom() - canvas.width);
-        var maxBottom = - (image_height * canvas.getZoom() - canvas.height);
+        const maxLeft = 0;
+        const maxTop = 0;
+        const maxRight = -(image_width * canvas.getZoom() - canvas.width);
+        const maxBottom = - (image_height * canvas.getZoom() - canvas.height);
 
         // Adjust left and top values to stay within the limits
         vpt[4] = Math.max(Math.min(vpt[4], maxLeft), maxRight);
@@ -482,7 +461,7 @@ $(document).ready(function () {
     });
 
     canvas.on("mouse:down", function (opt) {
-        var evt = opt.e;
+        const evt = opt.e;
         if (evt.altKey === true) {
             this.selection = true;
             this.isDragging = false;
@@ -498,14 +477,14 @@ $(document).ready(function () {
 
     canvas.on("mouse:move", function (opt) {
         if (this.isDragging) {
-            var evt = opt.e;
-            var vpt = this.viewportTransform;
+            const evt = opt.e;
+            const vpt = this.viewportTransform;
 
             // Calculate the maximum allowed values
-            var maxLeft = 0;
-            var maxTop = 0;
-            var maxRight = -(image_width * canvas.getZoom() - canvas.width);
-            var maxBottom = - (image_height * canvas.getZoom() - canvas.height);
+            const maxLeft = 0;
+            const maxTop = 0;
+            const maxRight = -(image_width * canvas.getZoom() - canvas.width);
+            const maxBottom = - (image_height * canvas.getZoom() - canvas.height);
 
             // Adjust left and top values to stay within the limits
             vpt[4] = Math.max(Math.min(vpt[4] + evt.clientX - this.lastPosX, maxLeft), maxRight);
@@ -529,9 +508,7 @@ $(document).ready(function () {
 
     let table = new DataTable('#output-table', {
         dom: "lBfrtip",
-
         order: 1,
-
         // set column width
         columnDefs: [
             {
@@ -542,7 +519,6 @@ $(document).ready(function () {
             },
             { width: '60px', targets: 1 },
         ],
-
         select: {
             style: "multi"
         },
@@ -554,15 +530,12 @@ $(document).ready(function () {
         // get data from category_id and json_data
         // category_id = { id: 0, desc: "name", count: 0 }
         // jsonData contain all data in table
-
         var data = [];
         var child_nodes = [];
 
         for (var j = 0; j < jsonData.length; j++) {
-
             //console.log(j, jsonData[j].Id, jsonData[j].Text);
-
-            var categoryId = jsonData[j].CategoryID;
+            const categoryId = jsonData[j].CategoryID;
 
             if (!child_nodes[categoryId]) {
                 //console.log('create new child_node');
@@ -574,18 +547,14 @@ $(document).ready(function () {
                 text: jsonData[j].Object + ", " + jsonData[j].Text,
                 state: { checked: false, },
             });
-
             //console.log(child_nodes)
         }
-
         //console.log(child_nodes)
-
         for (var i = 0; i < categoryData.length; i++) {
-
-            var category_name = categoryData[i].desc;
-            var id = categoryData[i].id
-            var child_node = child_nodes[id].nodes;
-            var child_count = child_node.length;
+            const category_name = categoryData[i].desc;
+            const id = categoryData[i].id
+            const child_node = child_nodes[id].nodes;
+            const child_count = child_node.length;
 
             data.push({
                 text: "Class : " + id + " - " + category_name + " (" + child_count + ")",
@@ -595,15 +564,12 @@ $(document).ready(function () {
                 },
                 nodes: child_node,
                 tags: [child_count.toString()],
-
             })
         }
-
         return data;
     }
 
     $('#tree').treeview({
-
         data: getTree(),
         checkedIcon: "fas fa-check-square",
         uncheckedIcon: "far fa-square",
@@ -611,7 +577,6 @@ $(document).ready(function () {
         collapseIcon: "fa fa-angle-down",
         showCheckbox: true,
         showTags: false,
-
     });
 
     $('#tree').on('nodeChecked', function (event, data) {
@@ -638,7 +603,6 @@ $(document).ready(function () {
             }
             updateOnOffButton(data, table, true);
         }
-
         updateOnOffMaster(table);
     }).on('nodeUnchecked', function (event, data) {
         const children = data.nodes;
@@ -652,11 +616,10 @@ $(document).ready(function () {
             }
         } else {
             // uncheck parent
-            var parent = $('#tree').treeview('getParent', data.nodeId);
+            const parent = $('#tree').treeview('getParent', data.nodeId);
             $('#tree').treeview('uncheckNode', [parent.nodeId, { silent: true }]);
             updateOnOffButton(data, table, false);
         }
-
         updateOnOffMaster(table);
     });
 
@@ -665,9 +628,8 @@ $(document).ready(function () {
     table.on('click', '.toggle-btn', function (event) {
         event.stopPropagation(); // Prevent row selection
 
-        var $btn = $(this);
-        var currentStatus = $btn.data('status');
-
+        const $btn = $(this);
+        const currentStatus = $btn.data('status');
         // Toggle the status and update botton text
         if (currentStatus == 'off') {
             $btn.data('status', 'on');
@@ -680,46 +642,42 @@ $(document).ready(function () {
             $btn.removeClass('btn-primary')
             $btn.addClass('btn-secondary')
         }
-
         updateTreeView($('#tree'), table);
         updateOnOffMaster(table);
     });
 
     // Master toggle button functionality
     $('#master-toggle').on('click', function () {
-        var $masterBtn = $(this);
-        var masterStatus = $masterBtn.data('status');
+        const $masterBtn = $(this);
+        const masterStatus = $masterBtn.data('status');
 
         // Toggle the master button status and update text
         if (masterStatus === 'off') {
             $masterBtn.data('status', 'on');
             $masterBtn.text('Hide all');
-
             // Toggle all rows to on
             table.rows().every(function () {
-                var $row = $(this.node());
-                var $btn = $row.find('.toggle-btn');
+                const $row = $(this.node());
+                const $btn = $row.find('.toggle-btn');
 
                 $btn.data('status', 'on');
                 $btn.text('On');
                 $btn.removeClass('btn-secondary').addClass('btn-primary')
             });
-
         } else {
             $masterBtn.data('status', 'off');
             $masterBtn.text('Show all');
 
             // Toggle all rows to off
             table.rows().every(function () {
-                var $row = $(this.node());
-                var $btn = $row.find('.toggle-btn');
+                const $row = $(this.node());
+                const $btn = $row.find('.toggle-btn');
 
                 $btn.data('status', 'off');
                 $btn.text('Off');
                 $btn.removeClass('btn-primary').addClass('btn-secondary')
             });
         }
-
         updateTreeView($('#tree'), table);
     });
 
@@ -728,7 +686,6 @@ $(document).ready(function () {
     });
 
     // display overlay when row is selected
-
     table
         .on('select', function (e, dt, type, indexes) {
             //let rowData = table.rows(indexes).data().toArray();
@@ -739,7 +696,6 @@ $(document).ready(function () {
 
             // update Deselect All button
             updateDeselectAllButton(table);
-
             //console.log('<b>' + type + ' selection</b> - ' + JSON.stringify(rowData));
         })
         .on('deselect', function (e, dt, type, indexes) {
@@ -751,7 +707,6 @@ $(document).ready(function () {
 
             // update Deselect All button
             updateDeselectAllButton(table);
-
             //console.log('<b>' + type + ' <i>de</i>selection</b> - ' + JSON.stringify(rowData));
         });
 
@@ -766,8 +721,7 @@ $(document).ready(function () {
     // hide and unhide form depends on selected model_type
 
     modelSelect.on("change", function () {
-        var selectedValue = $(this).val();
-
+        const selectedValue = $(this).val();
         // Enable all dependent select
         if (selectedValue == "yolov8") {
             weightContainer.slideDown();
@@ -784,7 +738,7 @@ $(document).ready(function () {
     const fileInput = $("#file-input");
 
     fileInput.on("change", function () {
-        var selectedFile = $(this).val();
+        const selectedFile = $(this).val();
 
         if (selectedFile) {
             submitButton
@@ -806,14 +760,11 @@ $(document).ready(function () {
     //h
     submitButton.on("click", function (event) {
         //event.preventDefault();
-
         //alert("Continue detecting symbols.");
-
         $("#main-container").waitMe({
             effect: 'win8_linear',
             text: 'Please wait...',
         });
-
         // sumbit form to FastAPI
         $("#main-form").submit();
     });
@@ -855,29 +806,24 @@ $(document).ready(function () {
         });
 
     // Auto adjust grid container height when window change size
-    savedHeight = 0;
-    savedWidth = 0;
+    var savedHeight = 0;
+    var savedWidth = 0;
 
     function adjustGridContainerHeight() {
-        var windowHeight = $(window).height();
-        var gridContainer = $("#grid-container");
-        var canvasContainer = $("div#canvas-container");
-
+        const windowHeight = $(window).height();
+        const gridContainer = $("#grid-container");
+        const canvasContainer = $("div#canvas-container");
         // Calculate the available height for the grid container
         const containerHeight = Math.max(500, windowHeight - gridContainer.offset().top);
-
         // Set the hegiht of the grid container
         gridContainer.height(containerHeight);
-
         // Save the height difference for the future adjustments
         if (!savedHeight) {
             savedHeight = containerHeight - canvasContainer.height();
         }
-
         if (!savedWidth) {
             savedWidth = gridContainer.width() - canvasContainer.width();
         }
-
         // Adjust the canvas container hegiht based on teh save height difference
         const canvasHeight = containerHeight - savedHeight;
         const canvasWidth = gridContainer.width() - savedWidth;
@@ -885,10 +831,8 @@ $(document).ready(function () {
         canvasContainer.width(canvasWidth);
         $("div#zoom-menu-container").width(canvasWidth);
         $("div#table-container").width(canvasWidth);
-
         // set the canvas to new size
         canvas.setWidth(100);
-
         canvas.setHeight(canvasHeight);
         canvas.setWidth(canvasWidth);
         canvas.calcOffset();
@@ -896,19 +840,15 @@ $(document).ready(function () {
     }
 
     // Attach the resize event listener
-
     $(window).on("resize", adjustGridContainerHeight);
 
     // Call the function initially
-
     adjustGridContainerHeight();
 
     // for some reason resetZoom() need to be called twice.
-
     canvasUtils.resetZoom();
     canvas.renderAll();
 
     updateTreeView($('#tree'), table);
-
     //console.log("jQuery finished.");
 });
