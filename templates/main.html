@@ -83,6 +83,10 @@
     .small-font {
       font-size: 0.8rem;
     }
+
+    .tiny-font {
+      font-size: 0.6rem;
+    }
   </style>
 </head>
 
@@ -102,10 +106,10 @@
         <div class="container text-center mt-1 mb-1">
           <div class="row">
             <div id="zoom-btn-container" class="col-4 align-self-end h-auto">
-              <button zoom-in id="zoom-in" class="btn btn-secondary btn-sm" type="button" disabled>Zoom In</button>
-              <button zoom-out id="zoom-out" class="btn btn-secondary btn-sm" type="button" disabled>Zoom
+              <button zoom-in id="zoom-in" class="btn btn-secondary btn-sm tiny-font" type="button" disabled>Zoom In</button>
+              <button zoom-out id="zoom-out" class="btn btn-secondary btn-sm tiny-font" type="button" disabled>Zoom
                 Out</button>
-              <button zoom-reset id="zoom-reset" class="btn btn-secondary btn-sm" type="button"
+              <button zoom-reset id="zoom-reset" class="btn btn-secondary btn-sm tiny-font" type="button"
                 disabled>Reset</button>
             </div>
             <div class="col-5">
@@ -115,12 +119,12 @@
           </div>
         </div>
       </div>
-      <div id="table-container" class="table-container small-font mb-1">
+      <div id="table-container" class="table-container small-font mb-2">
         <table id="output-table" class="display compact" width="100%">
           <thead class="tabel-dark">
             <tr>
-              <th class="toggle-column text-center">B Box<br/>On/Off</th>
-              <th>Item No.</th>
+              <th class="toggle-column text-center tiny-font">B.Box<br/>On/Off</th>
+              <th class="text-center">Item No.</th>
               <th>Object Detected</th>
               <th>Text Detected</th>
               <th>Score</th>
@@ -129,7 +133,7 @@
           <tbody id="table-body">
             {% for item in table_data %}
             <tr>
-              <td class="text-center"><div class="d-grid"><button class="toggle-btn btn btn-sm btn-primary small" data-status="on">On</button></div></td>
+              <td class="text-center"><div class="d-grid"><button class="toggle-btn btn btn-sm btn-primary small tiny-font" data-status="on">On</button></div></td>
               <td class="item-index text-center">{{ item.Index }}</td>
               <td class="item-object">{{ item.Object }}</td>
               <td class="item-text">{{ item.Text }}</td>
@@ -222,8 +226,8 @@
             <div class="row">
               <div class="text-body"><h5>Select by Category</h5></div>
               <div class="mb-1">
-                <button id="master-toggle" class="btn btn-primary btn-sm text-nowrap" data-status="on">Hide all</button>
-                <button id="deselect-all" class="btn btn-secondary disabled btn-sm text-nowrap" data-status="on">Deselect All</button>
+                <button id="master-toggle" class="btn btn-primary btn-sm text-nowrap tiny-font" data-status="on">Hide all</button>
+                <button id="deselect-all" class="btn btn-secondary disabled btn-sm text-nowrap tiny-font" data-status="on">Deselect All</button>
               </div>
               <div id="tree"></div>
             </div>

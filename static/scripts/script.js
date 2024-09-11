@@ -535,12 +535,12 @@ $(document).ready(function () {
         // set column width
         columnDefs: [
             {
-                width: '80px',
+                width: '60px',
                 searchable: false,
                 orderable: false,
                 targets: [0],
             },
-            { width: '80px', targets: 1 },
+            { width: '60px', targets: 1 },
         ],
 
         select: {
@@ -615,69 +615,49 @@ $(document).ready(function () {
     });
 
     $('#tree').on('nodeChecked', function (event, data) {
-        // Logic for select node and child node
-
-        //console.log(data.state['checked']);
-        var children = data.nodes;
+        // If there is children then select all children.
+        const children = data.nodes;
         if (children) {
             //console.log(data.nodes);
-
             for (var i = 0; i < children.length; i++) {
-                var node = children[i];
-                $('#tree').treeview('checkNode', [node.nodeId, { silent: true }]);
-
-                updateOnOffButton(node, table, true);
-            }
-        } else {
-            updateOnOffButton(data, table, true);
-        }
-
-        // check the parent if all children is checked then parent should be checked.
-        var parent = $('#tree').treeview('getParent', data.nodeId);
-        //console.log(data.nodeId, parent);
-
-        if (parent.nodeId != null) {
-            // unchecked parent
-            var my_children = parent.nodes;
-            for (var i = 0; i < my_children.length; i++) {
-                //console.log(i, my_children[i].state['checked'])
-                if (!my_children[i].state['checked']) {
-                    return;
+                const node = children[i];
+                if (!node.state['checked']) {
+                    $('#tree').treeview("checkNode", [node.nodeId, { silent: true }]);
+                    updateOnOffButton(node, table, true);
                 }
             }
-            $('#tree').treeview('checkNode', [parent.nodeId, { silent: true }]);
+        } else {
+            // check the parent if all children is checked then parent should be checked.
+            const parent = $('#tree').treeview("getParent", data.nodeId);
+            //console.log(data.nodeId, parent);
+            // unchecked parent
+            const child_count = $('#tree').treeview("getEnabled", parent.nodeID).length - 1;
+            const checked_count = $('#tree').treeview("getChecked", parent.nodeID).length;
+            if (checked_count == child_count) {
+                $('#tree').treeview('checkNode', [parent.nodeId, { silent: true }]);
+            }
+            updateOnOffButton(data, table, true);
         }
 
         updateOnOffMaster(table);
     }).on('nodeUnchecked', function (event, data) {
-
-        // uncheck all children
-        var children = data.nodes;
+        const children = data.nodes;
         if (children) {
             //console.log(data.nodes);
 
             for (var i = 0; i < children.length; i++) {
-                var node = children[i];
+                const node = children[i];
                 $('#tree').treeview('uncheckNode', [node.nodeId, { silent: true }]);
-
                 updateOnOffButton(node, table, false);
             }
         } else {
+            // uncheck parent
+            var parent = $('#tree').treeview('getParent', data.nodeId);
+            $('#tree').treeview('uncheckNode', [parent.nodeId, { silent: true }]);
             updateOnOffButton(data, table, false);
         }
 
-        // uncheck parent
-        var parent = $('#tree').treeview('getParent', data.nodeId);
-        if (parent.nodeId != null) {
-            // unchecked parent
-            $('#tree').treeview('uncheckNode', [parent.nodeId, { silent: true }]);
-        }
-
         updateOnOffMaster(table);
-
-    }).on('nodeExpanded', function () {
-        console.log('node Expaned');
-        adjustGridContainerHeight();
     });
 
     // toggle-on/off btn
@@ -702,6 +682,7 @@ $(document).ready(function () {
         }
 
         updateTreeView($('#tree'), table);
+        updateOnOffMaster(table);
     });
 
     // Master toggle button functionality
