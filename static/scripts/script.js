@@ -5,7 +5,6 @@
 var image_height = 100;
 var image_width = 100;
 var previous_selected_rows = 0;
-var isRun = false;
 
 const canvas = new fabric.Canvas(`canvas`);
 canvas.selection = false; // disable group selection
@@ -20,12 +19,12 @@ const canvasUtils = {
         const width = container.width();
         const height = container.height();
 
-        return Math.min(width / image_width, height / image_height);;
+        return Math.min(width / image_width, height / image_height);
     },
 
     // zoom canvas to input value
-    updateZoomButtons: function (zoom) {
-        if (isRun) {
+    updateZoomButtons: function (zoom, runFlag) {
+        if (runFlag) {
             const minZoom = canvasUtils.minZoom();
             const maxZoom = canvasUtils.maxZoom();
 
@@ -33,17 +32,20 @@ const canvasUtils = {
                 // disable zoom out and reset button
                 $(`#zoom-in`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-out`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`btn-primary`);
-                $(`#zoom-reset`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`disabtn-primarybled`);
+                $(`#zoom-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-to-fit`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
             } else if (zoom === maxZoom) {
                 // disable zoom in button
                 $(`#zoom-in`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-out`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
-                $(`#zoom-reset`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-to-fit`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
             } else {
                 // enable all zoom buttons
                 $(`#zoom-in`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-out`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
-                $(`#zoom-reset`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-to-fit`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
             }
 
             document.getElementById(`zoom-range`).min = minZoom;
@@ -70,7 +72,7 @@ const canvasUtils = {
         return xy;
      },
 
-    zoom: function (zoom) {
+    zoom: function (zoom, runFlag) {
         //var zoom = canvas.getZoom();
         const container = $(`#canvas-container`);
         const width = container.width();
@@ -81,14 +83,34 @@ const canvasUtils = {
         canvas.zoomToPoint({ x: width / 2, y: height / 2 }, zoom);
         $(`#zoom-range`).val(zoom);
         // update zoom buttons
-        this.updateZoomButtons(zoom);
+        this.updateZoomButtons(zoom, runFlag);
         canvas.renderAll();
     },
 
     // reset canvas zoom to fit container width
 
-    resetZoom: function () {
+    zoomAll: function () {
         zoom = this.minZoom();
+        $(`#zoom-range`).val(zoom);
+        canvas.setZoom(zoom);
+        //
+        const vpt = canvas.viewportTransform;
+        const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
+
+        vpt[4] = xy[0];
+        vpt[5] = xy[1];
+        canvas.calcOffset();
+        canvas.renderAll();
+    },
+
+    // reset canvas zoom to fit container width
+
+    zoomTofit: function () {
+        const container = $(`#canvas-container`);
+        const width = container.width();
+        const height = container.height();
+
+        const zoom = Math.max(width / image_width, height / image_height);
         $(`#zoom-range`).val(zoom);
         canvas.setZoom(zoom);
         //
@@ -103,9 +125,9 @@ const canvasUtils = {
 
     // adding image and bounding box from inference model to canves
 
-    addItemsToCanvas: function (image, isRun) {
-        // isRun is True if model is run.
-        // isRun is False when the fresh start.
+    addItemsToCanvas: function (image, runFlag) {
+        // runFlag is True if model is run.
+        // runFlag is False when the fresh start.
         const hexColor = [
             `#FF3838`,
             `#2C99A8`,
@@ -138,7 +160,7 @@ const canvasUtils = {
 
         canvas.add(canvasImg);
         
-        if (isRun) {
+        if (runFlag) {
             // for each item in jsonData => create bbox and add it to canvas
             jsonData.forEach((item) => {
                 const box = new fabric.Rect({
@@ -157,7 +179,7 @@ const canvasUtils = {
             });
         }
         // reset zoom
-        canvasUtils.resetZoom();
+        canvasUtils.zoomAll();
     },
 
     // Event handlers
@@ -165,18 +187,21 @@ const canvasUtils = {
     onImageLoad: function (image) {
         // image is finished loading
         const imageSrc = $(image).attr(`src`);
+        let runFlag = false;
 
         if (imageSrc.slice(-15) === `gcmethumb-3.png`) {
-            isRun = false;
-            this.addItemsToCanvas(image, isRun);
+            runFlag = false;
+            this.addItemsToCanvas(image, runFlag);
         } else {
-            isRun = true;
-            this.addItemsToCanvas(image, isRun);
-            this.updateZoomButtons(zoom);
+            runFlag = true;
+            this.addItemsToCanvas(image, runFlag);
+            this.updateZoomButtons(zoom, runFlag);
             const buttons = $(`div#zoom-btn-container button`);
             buttons.prop(`disabled`, false);
-            $(`#zoom-range`).prop(`disabled`, false);
+            $(`#zoom-range`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
         }
+
+        return runFlag;
     },
 
     // Create overlay display when row is selected
@@ -369,9 +394,11 @@ function updateDeselectAllButton(table) {
 // run this when all page is ready.
 
 $(document).ready(function () {
+    let runFlag = false;
     const zoomInButton = $(`#zoom-in`);
     const zoomOutButton = $(`#zoom-out`);
-    const zoomResetButton = $(`#zoom-reset`);
+    const zoomAllButton = $(`#zoom-all`);
+    const zoomTofitButton = $(`#zoom-to-fit`)
     const zoomRange = $(`#zoom-range`);
     const submitButton = $(`#submit`);
 
@@ -381,7 +408,7 @@ $(document).ready(function () {
     zoomInButton.on(`click`, function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (-50);
-        canvasUtils.zoom(zoom);
+        canvasUtils.zoom(zoom, runFlag);
         
         const vpt = canvas.viewportTransform;
         const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
@@ -393,7 +420,7 @@ $(document).ready(function () {
     zoomOutButton.on(`click`, function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (50);
-        canvasUtils.zoom(zoom);
+        canvasUtils.zoom(zoom, runFlag);
         
         const vpt = canvas.viewportTransform;
         const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
@@ -402,9 +429,14 @@ $(document).ready(function () {
         vpt[5] = xy[1];
     });
 
-    zoomResetButton.on(`click`, function () {
-        canvasUtils.resetZoom();
-        this.updateZoomButtons(zoom);
+    zoomAllButton.on(`click`, function () {
+        canvasUtils.zoomAll();
+        canvasUtils.updateZoomButtons(zoom, runFlag);
+    });
+
+    zoomTofitButton.on(`click`, function () {
+        canvasUtils.zoomTofit();
+        canvasUtils.updateZoomButtons(zoom, runFlag);
     });
 
     zoomRange.on(`input`, function (event) {
@@ -424,14 +456,14 @@ $(document).ready(function () {
         vpt[4] = xy[0];
         vpt[5] = xy[1];
 
-        canvasUtils.updateZoomButtons(zoom);
+        canvasUtils.updateZoomButtons(zoom, runFlag);
         canvas.renderAll();
     });
 
     // Event handler for canvas
 
     canvas.on(`mouse:wheel`, function (opt) {
-        if (isRun) {
+        if (runFlag) {
             const delta = opt.e.deltaY;
             var zoom = canvas.getZoom();
             zoom *= 0.999 ** delta;
@@ -448,7 +480,7 @@ $(document).ready(function () {
 
             opt.e.preventDefault();
             opt.e.stopPropagation();
-            canvasUtils.updateZoomButtons(zoom);
+            canvasUtils.updateZoomButtons(zoom, runFlag);
         }
     });
 
@@ -810,13 +842,13 @@ $(document).ready(function () {
             if (this.complete) {
                 // image is finished loading
                 //console.log(`Image has finished loading. (this.complete)`);
-                canvasUtils.onImageLoad(this);
+                runFlag =  canvasUtils.onImageLoad(this);
             }
         })
         .on(`load`, function () {
             // image is finished loading
             //console.log(`Image has finished loading. (on.load)`);
-            canvasUtils.onImageLoad(this);
+            runFlag = canvasUtils.onImageLoad(this);
         });
 
     // Auto adjust grid container height when window change size
@@ -850,7 +882,7 @@ $(document).ready(function () {
         canvas.setHeight(canvasHeight);
         canvas.setWidth(canvasWidth);
         canvas.calcOffset();
-        canvasUtils.resetZoom();
+        canvasUtils.zoomAll();
     }
 
     // Attach the resize event listener
@@ -859,8 +891,8 @@ $(document).ready(function () {
     // Call the function initially
     adjustGridContainerHeight();
 
-    // for some reason resetZoom() need to be called twice.
-    canvasUtils.resetZoom();
+    // for some reason zoomAll() need to be called twice.
+    canvasUtils.zoomAll();
     canvas.renderAll();
 
     for (let i = 0; i < toggleButtons.length; i++) {
