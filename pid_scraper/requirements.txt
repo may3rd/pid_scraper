@@ -1,0 +1,7 @@
+ultralytics
+opencv-python
+uvicorn
+numpy
+nest_asyncio
+fastapi
+Pillow
