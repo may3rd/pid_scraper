@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="x-ua-compatible" content="ie=edge" />
+  <title>E-PT AI</title>
+  <meta name="msapplication-TileImage" content="{{ url_for('static', path='images/cropped-gcme.webp') }}" />
+  <link rel="icon" href="{{ url_for('static', path='images/cropped-gcme.webp') }}" size="32x32" />
+  <link rel="icon" href="{{ url_for('static', path='images/cropped-gcme.webp') }}" size="192x192" />
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='images/cropped-gcme.webp') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/fontawesome.min.css') }}" />
+  <link rel="stlysheet" href="{{ url_for('static', path='scripts/bootstrap-treeview-1.2.0/src/css/bootstrap-treeview.css') }}" />
+  <script src="{{ url_for('static', path='scripts/fabric.min.js') }}"></script>
+  <script src="{{ url_for('static', path='scripts/jquery-3.7.0.js') }}"></script>
+  <script src="{{ url_for('static', path='scripts/bootstrap-treeview-1.2.0/src/js/bootstrap-treeview.js') }}"></script>
+  <script>
+    var jsonData = {{ json_data|safe }};
+    var categoryData = {{ category_id|safe }};
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" />
+  <!-- MDB -->
+  <link rel="stylesheet" href="{{ url_for('static', path='MDB5/css/mdb.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/bootstrap.min.css') }}" />
+
+  <!-- DataTable -->
+  <link rel="stylesheet" href="{{ url_for('static', path='css/jquery.dataTables.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/select.dataTables.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/buttons.dataTables.min.css') }}" />
+  <script src="{{ url_for('static', path='DataTables/jquery.dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', path='scripts/dataTables.select.min.js') }}"></script>
+  <script src="{{ url_for('static', path='scripts/dataTables.buttons.min.js') }}"></script>
+
+  <!-- Waitme -->
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='waitMe/waitMe.css') }}" />
+  <script src="{{ url_for('static', path='waitMe/waitMe.min.js') }}"></script>
+  <style>
+    body,
+    html {
+      padding-left: 5px;
+      padding-top: 5px;
+      padding-right: 5px;
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: 1fr 425px;
+      /* Two columns with 1:2 ratio */
+      grid-template-rows: 1fr 70px auto;
+      /* Two rows with automatic height */
+      gap: 5px;
+      /* Gap between grid items */
+      /* Set a fixed height for the grid */
+      position: relative;
+
+      grid-template-areas:
+        "canvas-container right-menu-container"
+        "zoom-menu-container right-menu-container"
+        "table-container right-menu-container";
+    }
+
+    .canvas-container {
+      grid-area: canvas-container;
+    }
+
+    .zoom-menu-container {
+      grid-area: zoom-menu-container;
+    }
+
+    .table-container {
+      grid-area: table-container;
+    }
+
+    .right-menu-container {
+      grid-area: right-menu-container;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .small-font {
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="main-container" class="container-fluid m-0 p-0">
+    <div id="grid-container" class="grid-container">
+      <div class="canvas-container m-0" id="canvas-container">
+        <canvas id="canvas" class="border"></canvas>
+        {% if image1 %}
+        <img id="output-image" src="{{ url_for('static', path='images/prediction_visual.png') }}" alt=""
+          class="hidden" />
+        {% else %}
+        <img id="output-image" src="{{ url_for('static', path='images/gcmethumb-3.png') }}" alt="" class="hidden" />
+        {% endif %}
+      </div>
+      <div id="zoom-menu-container" class="zoom-menu-container" style="height: 65px;">
+        <div class="container text-center mt-1 mb-1">
+          <div class="row">
+            <div id="zoom-btn-container" class="col-4 align-self-end h-auto">
+              <button zoom-in id="zoom-in" class="btn btn-secondary btn-sm" type="button" disabled>Zoom In</button>
+              <button zoom-out id="zoom-out" class="btn btn-secondary btn-sm" type="button" disabled>Zoom
+                Out</button>
+              <button zoom-reset id="zoom-reset" class="btn btn-secondary btn-sm" type="button"
+                disabled>Reset</button>
+            </div>
+            <div class="col-5">
+              <div id="inputrangeHelpBlock" class="form-text">Slide to zoom.</div>
+              <input id="zoom-range" class="form-range" type="range" min="0.1" max="10" step="0.1" value="1" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="table-container" class="table-container small-font mb-1">
+        <table id="output-table" class="display compact" width="100%">
+          <thead class="tabel-dark">
+            <tr>
+              <th class="toggle-column text-center">B Box<br/>On/Off</th>
+              <th>Item No.</th>
+              <th>Object Detected</th>
+              <th>Text Detected</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="table-body">
+            {% for item in table_data %}
+            <tr>
+              <td class="text-center"><div class="d-grid"><button class="toggle-btn btn btn-sm btn-primary small" data-status="on">On</button></div></td>
+              <td class="item-index text-center">{{ item.Index }}</td>
+              <td class="item-object">{{ item.Object }}</td>
+              <td class="item-text">{{ item.Text }}</td>
+              <td>{{ item.Score }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="right-menu-container small-font">
+        <div class="container">
+          <form id="main-form" action="/submit" enctype="multipart/form-data" method="post">
+            <div class="row align-items-start mb-2">
+              <div class="col">
+                <label for="file-input" class="form-label mb-0">P&ID input</label>
+                <input id="file-input" class="form-control form-control-sm" name="file_input" type="file" />
+                <div id="" class="form-text">Last run: {{ input_filename }}</div>
+              </div>
+            </div>
+            <div class="row align-items-top">
+              <div class="col-4">
+                <label for="conf-th" class="form-label mb-0">Confident Threshold</label>
+                <input id="conf-th" class="form-control form-control-sm" name="conf_th" type="text" placeholder=""
+                  aria-label="example" value="0.80" />
+                <div id="" class="form-text">The confidential threshold for model detection.</div>
+              </div>
+              <div class="col-4">
+                <label for="image-size" class="form-label mb-0">Segment Size</label>
+                <input id="image-size" class="form-control form-control-sm" name="image_size" type="text"
+                  placeholder="640" aria-label="example" value="640" />
+                <div id="" class="form-text">The segment size of image, equal to imgsz in yolov8. 640 for default, 288
+                  for yolov8_300.</div>
+              </div>
+              <div class="col-4">
+                <label for="contourArea" class="form-label mb-0">Contour Area</label>
+                <input id="contourArea" class="form-control form-control-sm" name="contourArea" type="text"
+                  placeholder="15000" aria-label="example" />
+                <div id="" class="form-text">
+                  Parameter for text finding.<br />
+                  Line 2.
+                </div>
+              </div>
+            </div>
+            <div class="row align-items-center mt-1">
+              <div class="col">
+                <label for="selected_model" class="form-label mb-0">Model type : </label>
+                <select id="selected_model" class="form-select form-select-sm" name="selected_model">
+                  {% for item in model_types %}
+                  <option value="{{ item.value }}">{{ item.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div id="weight-path-container" class="row align-items-center mt-1">
+              <div class="col">
+                <label for="weight_file" class="form-label mb-0">Weight file : </label>
+                <select id="weight_file" class="form-select form-select-sm" name="weight_file">
+                  {% for item in weight_files %}
+                  <option value="{{ item.item }}">{{ item.item }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div id="config-path-container" class="row align-items-center mt-1">
+              <div class="col">
+                <label for="config_file" class="form-label mb-0">Config file : </label>
+                <select id="config_file" class="form-select form-select-sm" name="config_file">
+                  {% for item in config_files %}
+                  <option value="{{ item.item }}">{{ item.item }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div id="textOCR-container" class="row">
+              <div class="col mt-2">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" value="True" id="text_OCR" name="text_OCR" />
+                  <label class="form-check-label" for="textOCR">Apply Text Recognition. (EasyOCR)</label>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col">
+                <button id="submit" class="btn btn-secondary btn-sm mb-3 mt-2" type="submit"
+                  disabled>Submit</button>
+              </div>
+            </div>
+          </form>
+          <div class="row align-items-start mb-2">
+            <div class="row">
+              <div class="text-body"><h5>Select by Category</h5></div>
+              <div class="mb-1">
+                <button id="master-toggle" class="btn btn-primary btn-sm text-nowrap" data-status="on">Hide all</button>
+                <button id="deselect-all" class="btn btn-secondary disabled btn-sm text-nowrap" data-status="on">Deselect All</button>
+              </div>
+              <div id="tree"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', path='scripts/script.js') }}"></script>
+</body>
+
+</html>

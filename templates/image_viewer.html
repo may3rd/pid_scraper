@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image Viewer</title>
+</head>
+<body>
+    <h1>Image Viewer</h1>
+    <div id="image-container">
+        <img id="image" src="{{ url_for('static', path='images/example.jpg') }}" alt="Example Image">
+    </div>
+    <button onclick="zoomIn()">Zoom In</button>
+    <button onclick="zoomOut()">Zoom Out</button>
+</body>
+<script>
+    function zoomIn() {
+        fetch(`/zoom-image?scale=1.2&x=0&y=0`)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                document.getElementById("image").src = url;
+            });
+    }
+
+    function zoomOut() {
+        fetch(`/zoom-image?scale=0.8&x=0&y=0`)
+            .then(response => response.blob())
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                document.getElementById("image").src = url;
+            });
+    }
+</script>
+</html>

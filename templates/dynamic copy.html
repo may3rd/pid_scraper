@@ -1,0 +1,118 @@
+<html>
+  <head>
+    <title>Rendering Dynamic Images Using FastAPI</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='style.css') }}">
+    <script src="{{ url_for('static', path='panzoom.min.js') }}"></script>
+
+    <style>
+      .image-box #image1 {
+        cursor: grab;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .image-box-none {
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+
+    <form action="/uploadfile" enctype="multipart/form-data" method="POST">
+      <input name="file" type="file" />
+      <input type="submit" />
+    </form>
+
+    <button zoom-in>Zoom In</button>
+    <button zoom-out>Zoom Out</button>
+    <button zoom-reset>Reset</button>
+
+    {% if image1 %}
+    <h3>Rendered Image</h3>
+
+    <div class="grid-container" id="grid-container">
+        <div class="image-box" id="image1-box"><img id="image1" src="data:image/jpeg;base64,{{ image1 }}" alt="Original Image"/></div>
+        <div class="image-box-none"><img id="image2" src="data:image/jpeg;base64,{{ image2 }}" /></div>
+        <div class="image-box-none"><img id="image3" src="data:image/jpeg;base64,{{ image3 }}" /></div>
+        <div class="image-box-none"><img id="image4" src="data:image/jpeg;base64,{{ image4 }}" alt="Final Result"/></div>
+    </div>
+
+    <script type="text/javascript">
+      document.addEventListener('DOMContentLoaded', function () {
+        const image1 = document.getElementById('image1');
+        const image2 = document.getElementById('image2');
+        const image3 = document.getElementById('image3');
+        const image4 = document.getElementById('image4');
+
+        var zoomInButton = document.querySelector('[zoom-in]');
+        var zoomOutButton = document.querySelector('[zoom-out]');
+        var zoomResetButton = document.querySelector('[zoom-reset]');
+
+        const panzoom1 = Panzoom(image1, { maxScale: 5 });
+        const panzoom2 = Panzoom(image2, { handleStartEvent: () => {} });
+        const panzoom3 = Panzoom(image3, { handleStartEvent: () => {} });
+        const panzoom4 = Panzoom(image4, { handleStartEvent: () => {} });
+
+        zoomInButton.addEventListener('click', panzoom1.zoomIn);
+        zoomOutButton.addEventListener('click', panzoom1.zoomOut);
+        zoomResetButton.addEventListener('click', panzoom1.reset);
+
+        image1.addEventListener('panzoomchange', (event) => {
+          //console.log(event.detail) // => { x: 0, y: 0, scale: 1 }
+          const details = event.detail;
+          const x = details.x;
+          const y = details.y;
+          const scale = details.scale;
+          panzoom2.pan(x,y);
+          panzoom2.zoom(scale);
+          panzoom3.pan(x,y);
+          panzoom3.zoom(scale);
+          panzoom4.pan(x,y);
+          panzoom4.zoom(scale);
+        });
+
+        const myDiv = document.getElementById('image1-box');
+
+        // Get the dimensions of the image
+        const width = image1.naturalWidth;
+        const height = image1.naturalHeight;
+
+        const myDivWidth = myDiv.offsetWidth - 20;
+        const myDivHeight = myDiv.offsetHeight - 20;
+
+        const startScale = Math.min(myDivWidth / width, myDivHeight / height);
+        const startX = (myDivWidth - width)/2;
+        const startY = (myDivHeight - height)/2;
+
+        console.log(startScale);
+        // console.log(width);
+        // console.log(height);
+        // console.log(myDivWidth);
+        // console.log(myDivHeight);
+
+        //panzoom1.setOptions({startX: myDivWidth - 2048, startY: 0});
+        panzoom1.setOptions({ startScale: startScale });
+        panzoom1.setOptions({ startX: startX / startScale, startY: startY / startScale });
+        panzoom1.reset();
+      });
+
+      function adjustContainerHeight() {
+          const gridContainer = document.getElementById('grid-container');
+          const windowHeight = window.innerHeight;
+          const containerHeight = Math.max(windowHeight - 150, 200);
+          gridContainer.style.height = `${containerHeight}px`;
+        }
+
+        // Adjust container height initially and on window resize
+        adjustContainerHeight();
+        window.addEventListener('resize', adjustContainerHeight);
+
+    </script>
+
+    {% else %}
+    <h1>Image will be render here...</h1>
+    {% endif %}
+
+  </body>
+</html>
