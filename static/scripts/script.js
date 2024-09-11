@@ -4,7 +4,6 @@
 
 var image_height = 100;
 var image_width = 100;
-var previous_selected_rows = 0;
 
 const canvas = new fabric.Canvas(`canvas`);
 canvas.selection = false; // disable group selection
@@ -89,7 +88,7 @@ const canvasUtils = {
 
     // reset canvas zoom to fit container width
 
-    zoomAll: function () {
+    zoomAll: function (runFlag) {
         zoom = this.minZoom();
         $(`#zoom-range`).val(zoom);
         canvas.setZoom(zoom);
@@ -99,13 +98,14 @@ const canvasUtils = {
 
         vpt[4] = xy[0];
         vpt[5] = xy[1];
+        this.updateZoomButtons(zoom, runFlag);
         canvas.calcOffset();
         canvas.renderAll();
     },
 
     // reset canvas zoom to fit container width
 
-    zoomTofit: function () {
+    zoomTofit: function (runFlag) {
         const container = $(`#canvas-container`);
         const width = container.width();
         const height = container.height();
@@ -119,6 +119,7 @@ const canvasUtils = {
 
         vpt[4] = xy[0];
         vpt[5] = xy[1];
+        this.updateZoomButtons(zoom, runFlag);
         canvas.calcOffset();
         canvas.renderAll();
     },
@@ -153,6 +154,8 @@ const canvasUtils = {
 
         // get image to be added in canvas
         const canvasImg = new fabric.Image(image);
+        let boxes = []
+
         canvasImg.set(`selectable`, false);
         // save image width and hight
         image_width = canvasImg.width;
@@ -175,8 +178,11 @@ const canvasUtils = {
                     opacity: 1.0,
                 });
                 //console.log(`Add box to canvas`, item.index, hexColor[item.CategoryID % hexColor.length]);
-                canvas.add(box);
+                //canvas.add(box);
+                boxes.push(box);
             });
+            var group = new fabric.Group(boxes);
+            canvas.add(group);
         }
         // reset zoom
         canvasUtils.zoomAll();
@@ -205,20 +211,13 @@ const canvasUtils = {
     },
 
     // Create overlay display when row is selected
-
     displayOverlay: function (selectd_rows) {
         // TODO
-        if (previous_selected_rows > 0) {
+        const objects = canvas.getObjects();
+        if (objects.length > 2) {
             // remove last object
-            const objects = canvas.getObjects();
             const rect = objects[objects.length - 1];
-
             canvas.remove(rect);
-            objects.forEach((index, rect) => {
-                if (index > 0) {
-                    rect.opacity = 0.0;
-                }
-            });
         }
 
         if (selectd_rows.length > 0) {
@@ -256,49 +255,19 @@ const canvasUtils = {
             canvas.add(rect);
         }
         // save current select for next operation
-        previous_selected_rows = selectd_rows.length;
         canvas.renderAll();
     },
 
     // draw box on button On/Off status
-    displayBBX(table) {
-        var onRows = [];
-
-        table.rows().every(function () {
-            const $row = $(this.node());
-            const $btn = $row.find(`.toggle-btn`);
-            const itemNo = this.data()[1];
-
-            if ($btn.data(`status`) === `on`) {
-                onRows.push(Number(itemNo));
-            }
-        });
-
-        //console.log(`onRows = `, onRows);
-
-        // Further processing with onRows
-        const objects = canvas.getObjects();
-
-        const last_index = objects.length;
-
-        if (previous_selected_rows > 0) {
-            last_index = last_index - 1;
-        }
-
-        for (let i = 1; i < last_index; i++) {
-            objects[i].opacity = 0.0;
-        }
-        try {
-            onRows.forEach((value) => {
-                objects[value].opacity = 1.0;
-            });
-        } catch (err) { }
-
+    toggleBBox(index, flag) {
+        const group = canvas.item(1);
+        const opc = flag ? 1 : 0
+        group.item(index).set(`opacity`, opc);
         canvas.renderAll();
     },
 };
 
-function updateTreeView(index, toggleButtons, treeNodes, table) {
+function updateTreeView(index, toggleButtons, treeNodes) {
     const $btn = toggleButtons[index];
     const status = $btn.data(`status`) === `on` ? true : false;
     const node = treeNodes[index];
@@ -311,7 +280,6 @@ function updateTreeView(index, toggleButtons, treeNodes, table) {
     }
 
     const parent = $(`#tree`).treeview(`getParent`, node.nodeId);
-
     // check the treeview for parent nodes
     //console.log(parent_nodes);
     let siblings = $(`#tree`).treeview(`getSiblings`, node.nodeId);
@@ -329,29 +297,21 @@ function updateTreeView(index, toggleButtons, treeNodes, table) {
     } else {
         $(`#tree`).treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
     }
-
-    // update display
-    canvasUtils.displayBBX(table);
 }
 
-function updateOnOffMaster(table) {
+function updateOnOffMaster(buttons) {
     // check btn status again for master button
-    var btnStatus = [];
-    var off_status_count = 0;
+    let isOff = false
 
-    table.rows().every(function () {
-        const $row = $(this.node());
-        const $btn = $row.find(`.toggle-btn`);
-        btnStatus.push($btn.data(`status`))
-    });
-
-    for (var i = 0; i < btnStatus.length; i++) {
-        if (btnStatus[i] === `off`) {
-            off_status_count++;   // break loop if any is on
+    for (let i = 0; i < buttons.length; i++) {
+        const $btn = buttons[i];
+        if ($btn.data(`status`) === 'off') {
+            isOff = true;
+            break;
         }
     }
 
-    if (off_status_count === 0) {
+    if (!isOff) {
         // change master toggle button to Show all
         $(`#master-toggle`).data(`status`, `on`);
         $(`#master-toggle`).text(`Hide all`);
@@ -361,9 +321,8 @@ function updateOnOffMaster(table) {
     }
 }
 
-function updateOnOffButton(data, toggleButtons, table, status) {
-    const tree_index = Number(data.tags[0]);
-    const $btn = toggleButtons[tree_index - 1];
+function toggleOnOffButton(index, toggleButtons, status) {
+    const $btn = toggleButtons[index];
     if (status || status === `on`) {
         //console.log(`match - on`);
         $btn.data(`status`, `on`);
@@ -378,7 +337,7 @@ function updateOnOffButton(data, toggleButtons, table, status) {
         $btn.addClass(`btn-secondary`)
     }
     // update display
-    canvasUtils.displayBBX(table);
+    canvasUtils.toggleBBox(index, status);
 }
 
 function updateDeselectAllButton(table) {
@@ -430,13 +389,11 @@ $(document).ready(function () {
     });
 
     zoomAllButton.on(`click`, function () {
-        canvasUtils.zoomAll();
-        canvasUtils.updateZoomButtons(zoom, runFlag);
+        canvasUtils.zoomAll(runFlag);
     });
 
     zoomTofitButton.on(`click`, function () {
-        canvasUtils.zoomTofit();
-        canvasUtils.updateZoomButtons(zoom, runFlag);
+        canvasUtils.zoomTofit(runFlag);
     });
 
     zoomRange.on(`input`, function (event) {
@@ -619,7 +576,7 @@ $(document).ready(function () {
                 const node = children[i];
                 if (!node.state[`checked`]) {
                     $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
-                    updateOnOffButton(node, toggleButtons, table, true);
+                    toggleOnOffButton(Number(node.tags[0]) - 1, toggleButtons, true);
                 }
             }
         } else {
@@ -639,9 +596,9 @@ $(document).ready(function () {
             if (checked_count === siblings.length) {
                 $(`#tree`).treeview(`checkNode`, [parent.nodeId, { silent: true }]);
             }
-            updateOnOffButton(data, toggleButtons, table, true);
+            toggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, true);
         }
-        updateOnOffMaster(table);
+        updateOnOffMaster(toggleButtons);
     }).on(`nodeUnchecked`, function (event, data) {
         const children = data.nodes;
         if (children) {
@@ -649,15 +606,15 @@ $(document).ready(function () {
             for (var i = 0; i < children.length; i++) {
                 const node = children[i];
                 $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
-                updateOnOffButton(node, toggleButtons, table, false);
+                toggleOnOffButton(Number(node.tags[0]) - 1, toggleButtons, false);
             }
         } else {
             // uncheck parent
             const parent = $(`#tree`).treeview(`getParent`, data.nodeId);
             $(`#tree`).treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
-            updateOnOffButton(data, toggleButtons, table, false);
+            toggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, false);
         }
-        updateOnOffMaster(table);
+        updateOnOffMaster(toggleButtons);
     });
 
     // toggle-on/off btn
@@ -673,10 +630,10 @@ $(document).ready(function () {
         event.stopPropagation(); // Prevent row selection
 
         const $btn = $(this);
-        const currentStatus = $btn.data(`status`);
+        const currentStatus = $btn.data(`status`) === `on`;
         const index = Number($btn.data(`index`)) - 1;
         // Toggle the status and update botton text
-        if (currentStatus == `off`) {
+        if (!currentStatus) {
             $btn.data(`status`, `on`);
             $btn.text(`On`);
             $btn.removeClass(`btn-secondary`)
@@ -687,17 +644,18 @@ $(document).ready(function () {
             $btn.removeClass(`btn-primary`)
             $btn.addClass(`btn-secondary`)
         }
-        updateTreeView(index, toggleButtons, treeNodes, table)
-        updateOnOffMaster(table);
+        updateTreeView(index, toggleButtons, treeNodes);
+        canvasUtils.toggleBBox(index, !currentStatus);
+        updateOnOffMaster(toggleButtons);
     });
 
     // Master toggle button functionality
     $(`#master-toggle`).on(`click`, function () {
         const $masterBtn = $(this);
-        const masterStatus = $masterBtn.data(`status`);
+        const masterStatus = $masterBtn.data(`status`) === `on`;
 
         // Toggle the master button status and update text
-        if (masterStatus === `off`) {
+        if (!masterStatus) {
             $masterBtn.data(`status`, `on`);
             $masterBtn.text(`Hide all`);
             // Toggle all rows to on
@@ -707,12 +665,11 @@ $(document).ready(function () {
 
                 $btn.data(`status`, `on`);
                 $btn.text(`On`);
-                $btn.removeClass(`btn-secondary`).addClass(`btn-primary`)
+                $btn.removeClass(`btn-secondary`).addClass(`btn-primary`);
             });
         } else {
             $masterBtn.data(`status`, `off`);
             $masterBtn.text(`Show all`);
-
             // Toggle all rows to off
             table.rows().every(function () {
                 const $row = $(this.node());
@@ -720,12 +677,13 @@ $(document).ready(function () {
 
                 $btn.data(`status`, `off`);
                 $btn.text(`Off`);
-                $btn.removeClass(`btn-primary`).addClass(`btn-secondary`)
+                $btn.removeClass(`btn-primary`).addClass(`btn-secondary`);
             });
         }
 
         for (let i = 0; i < toggleButtons.length; i++) {
-            updateTreeView(i, toggleButtons, treeNodes, table)
+            updateTreeView(i, toggleButtons, treeNodes)
+            canvasUtils.toggleBBox(i, !masterStatus);
         }
     });
 
@@ -896,7 +854,7 @@ $(document).ready(function () {
     canvas.renderAll();
 
     for (let i = 0; i < toggleButtons.length; i++) {
-        updateTreeView(i, toggleButtons, treeNodes, table)
+        updateTreeView(i, toggleButtons, treeNodes)
     }
     
     //console.log(`jQuery finished.`);
