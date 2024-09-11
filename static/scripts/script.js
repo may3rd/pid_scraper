@@ -6,7 +6,7 @@ var image_height = 100;
 var image_width = 100;
 var previous_selected_rows = 0;
 
-const canvas = new fabric.Canvas("canvas");
+const canvas = new fabric.Canvas(`canvas`);
 canvas.selection = false; // disable group selection
 
 // define utlities for canvas displaying
@@ -15,7 +15,7 @@ const canvasUtils = {
     // Constants
     maxZoom: function () { return 5.0; },
     minZoom: function () {
-        const container = $("#canvas-container");
+        const container = $(`#canvas-container`);
         const width = container.width();
         const height = container.height();
 
@@ -29,36 +29,36 @@ const canvasUtils = {
 
         if (zoom === minZoom) {
             // disable zoom out and reset button
-            $('#zoom-in').removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
-            $("#zoom-out").addClass('disabled').addClass('btn-secondary').addClass('btn-primary');
-            $("#zoom-reset").addClass('disabled').addClass('btn-secondary').addClass('disabtn-primarybled');
+            $(`#zoom-in`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-out`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-reset`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`disabtn-primarybled`);
         } else if (zoom === maxZoom) {
             // disable zoom in button
-            $('#zoom-in').addClass('disabled').addClass('btn-secondary').addClass('btn-primary');
-            $("#zoom-out").removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
-            $("#zoom-reset").removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
+            $(`#zoom-in`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-out`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-reset`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
         } else {
             // enable all zoom buttons
-            $('#zoom-in').removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
-            $("#zoom-out").removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
-            $("#zoom-reset").removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
+            $(`#zoom-in`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-out`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-reset`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
         }
 
-        document.getElementById('zoom-range').min = minZoom;
-        document.getElementById('zoom-range').max = maxZoom;
-        document.getElementById('zoom-range').step = (maxZoom - minZoom) / 100;
+        document.getElementById(`zoom-range`).min = minZoom;
+        document.getElementById(`zoom-range`).max = maxZoom;
+        document.getElementById(`zoom-range`).step = (maxZoom - minZoom) / 100;
     },
 
     zoom: function (zoom) {
         //var zoom = canvas.getZoom();
-        const container = $("#canvas-container");
+        const container = $(`#canvas-container`);
         const width = container.width();
         const height = container.height();
         //zoom *= 0.999 ** factor;
         zoom = Math.min(zoom, this.maxZoom());
         zoom = Math.max(zoom, this.minZoom());
         canvas.zoomToPoint({ x: width / 2, y: height / 2 }, zoom);
-        $("#zoom-range").val(zoom);
+        $(`#zoom-range`).val(zoom);
         // update zoom buttons
         this.updateZoomButtons(zoom);
         canvas.renderAll();
@@ -68,7 +68,7 @@ const canvasUtils = {
 
     resetZoom: function () {
         var vpt = canvas.viewportTransform;
-        const container = $("#canvas-container");
+        const container = $(`#canvas-container`);
         const width = container.width();
         const height = container.height();
 
@@ -77,7 +77,7 @@ const canvasUtils = {
         originalY = Math.floor((height - image_height * zoom) / 2);
         vpt[4] = 0;
         vpt[5] = 0;
-        $("#zoom-range").val(zoom);
+        $(`#zoom-range`).val(zoom);
         canvas.setZoom(zoom);
         canvas.calcOffset();
         canvas.renderAll();
@@ -87,40 +87,40 @@ const canvasUtils = {
     // adding image and bounding box from inference model to canves
 
     addItemsToCanvas: function (image) {
-        const buttons = $("div#zoom-btn-container button");
+        const buttons = $(`div#zoom-btn-container button`);
 
         const hexColor = [
-            "#FF3838",
-            "#2C99A8",
-            "#FF701F",
-            "#6473FF",
-            "#CFD231",
-            "#48F90A",
-            "#92CC17",
-            "#3DDB86",
-            "#1A9334",
-            "#00D4BB",
-            "#FF9D97",
-            "#00C2FF",
-            "#344593",
-            "#FFB21D",
-            "#0018EC",
-            "#8438FF",
-            "#520085",
-            "#CB38FF",
-            "#FF95C8",
-            "#FF37C7"
+            `#FF3838`,
+            `#2C99A8`,
+            `#FF701F`,
+            `#6473FF`,
+            `#CFD231`,
+            `#48F90A`,
+            `#92CC17`,
+            `#3DDB86`,
+            `#1A9334`,
+            `#00D4BB`,
+            `#FF9D97`,
+            `#00C2FF`,
+            `#344593`,
+            `#FFB21D`,
+            `#0018EC`,
+            `#8438FF`,
+            `#520085`,
+            `#CB38FF`,
+            `#FF95C8`,
+            `#FF37C7`
         ];
 
         // enable zoom buttons
         buttons
-            .prop("disabled", false)
-            .removeClass("btn-secondary")
-            .addClass("btn-primary");
+            .prop(`disabled`, false)
+            .removeClass(`btn-secondary`)
+            .addClass(`btn-primary`);
 
         // get image to be added in canvas
         const canvasImg = new fabric.Image(image);
-        canvasImg.set("selectable", false);
+        canvasImg.set(`selectable`, false);
 
         // save image width and hight
         image_width = canvasImg.width;
@@ -132,7 +132,7 @@ const canvasUtils = {
             const box = new fabric.Rect({
                 left: item.Left,
                 top: item.Top,
-                fill: "rgba(0,0,0,0)",
+                fill: `rgba(0,0,0,0)`,
                 stroke: hexColor[item.CategoryID % hexColor.length],
                 strokeWidth: 3,
                 width: item.Width,
@@ -140,7 +140,7 @@ const canvasUtils = {
                 selectable: false,
                 opacity: 1.0,
             });
-            //console.log("Add box to canvas", item.index, hexColor[item.CategoryID % hexColor.length]);
+            //console.log(`Add box to canvas`, item.index, hexColor[item.CategoryID % hexColor.length]);
             canvas.add(box);
         });
 
@@ -152,13 +152,13 @@ const canvasUtils = {
 
     onImageLoad: function (image) {
         // image is finished loading
-        const imageSrc = $(image).attr("src");
+        const imageSrc = $(image).attr(`src`);
 
-        if (imageSrc.slice(-15) !== "gcmethumb-3.png") {
+        if (imageSrc.slice(-15) !== `gcmethumb-3.png`) {
             this.addItemsToCanvas(image);
         } else {
             canvasImg = new fabric.Image(image);
-            canvasImg.set("selectable", false);
+            canvasImg.set(`selectable`, false);
 
             image_width = canvasImg.width;
             image_height = canvasImg.height;
@@ -190,7 +190,7 @@ const canvasUtils = {
             const rect = new fabric.Rect({
                 left: 0,
                 top: 0,
-                fill: 'black',
+                fill: `black`,
                 width: image_width,
                 height: image_height,
                 opacity: 0.3,
@@ -230,15 +230,15 @@ const canvasUtils = {
 
         table.rows().every(function () {
             const $row = $(this.node());
-            const $btn = $row.find('.toggle-btn');
+            const $btn = $row.find(`.toggle-btn`);
             const itemNo = this.data()[1];
 
-            if ($btn.data('status') === 'on') {
+            if ($btn.data(`status`) === `on`) {
                 onRows.push(Number(itemNo));
             }
         });
 
-        //console.log("onRows = ", onRows);
+        //console.log(`onRows = `, onRows);
 
         // Further processing with onRows
         const objects = canvas.getObjects();
@@ -267,28 +267,28 @@ function updateTreeView(tree, table) {
 
     table.rows().every(function () {
         const $row = $(this.node());
-        const $btn = $row.find('.toggle-btn');
-        const status = $btn.data('status') === 'on' ? true : false;
-        const text = $row.find('.item-object').text() + ", " + $row.find('.item-text').text();
+        const $btn = $row.find(`.toggle-btn`);
+        const status = $btn.data(`status`) === `on` ? true : false;
+        const text = $row.find(`.item-object`).text() + `, ` + $row.find(`.item-text`).text();
         //console.log(text, status);
-        const nodes = $('#tree').treeview('search', [text, {
+        const nodes = $(`#tree`).treeview(`search`, [text, {
             ignoreCase: true,     // case insensitive
             exactMatch: true,    // like or equals
             revealResults: false,  // reveal matching nodes
         }]);
 
         const node = nodes[0];
-        //console.log("find for ", text, ": found ", node);
+        //console.log(`find for `, text, `: found `, node);
         if (node) {
-            //console.log(node.nodeId, ' to ', status);
+            //console.log(node.nodeId, ` to `, status);
             if (status === true) {
-                $('#tree').treeview('checkNode', [node.nodeId, { silent: true }]);
+                $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
             } else {
-                $('#tree').treeview('uncheckNode', [node.nodeId, { silent: true }]);
+                $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
             }
         }
 
-        const parent = $('#tree').treeview('getParent', node.nodeId);
+        const parent = $(`#tree`).treeview(`getParent`, node.nodeId);
 
         if (!parent_nodes.includes(parent)) {
             parent_nodes.push(parent);
@@ -302,15 +302,15 @@ function updateTreeView(tree, table) {
         var count = 0;
 
         for (var j = 0; j < childern.length; j++) {
-            if (childern[j].state['checked'] == true) {
+            if (childern[j].state[`checked`] == true) {
                 count++;
             }
         }
 
         if (count == childern.length) {
-            $('#tree').treeview('checkNode', [parent_nodes[i].nodeId, { silent: true }]);
+            $(`#tree`).treeview(`checkNode`, [parent_nodes[i].nodeId, { silent: true }]);
         } else {
-            $('#tree').treeview('uncheckNode', [parent_nodes[i].nodeId, { silent: true }]);
+            $(`#tree`).treeview(`uncheckNode`, [parent_nodes[i].nodeId, { silent: true }]);
         }
     }
     // update display
@@ -324,39 +324,39 @@ function updateOnOffMaster(table) {
 
     table.rows().every(function () {
         const $row = $(this.node());
-        const $btn = $row.find('.toggle-btn');
-        btnStatus.push($btn.data('status'))
+        const $btn = $row.find(`.toggle-btn`);
+        btnStatus.push($btn.data(`status`))
     });
 
     for (var i = 0; i < btnStatus.length; i++) {
-        if (btnStatus[i] === 'off') {
+        if (btnStatus[i] === `off`) {
             off_status_count++;   // break loop if any is on
         }
     }
 
     if (off_status_count === 0) {
         // change master toggle button to Show all
-        $('#master-toggle').data('status', 'on');
-        $('#master-toggle').text('Hide all');
+        $(`#master-toggle`).data(`status`, `on`);
+        $(`#master-toggle`).text(`Hide all`);
     } else {
-        $('#master-toggle').data('status', 'off');
-        $('#master-toggle').text('Show all');
+        $(`#master-toggle`).data(`status`, `off`);
+        $(`#master-toggle`).text(`Show all`);
     }
 }
 
 function toggleOnOffButton($btn, table, status) {
-    if (status || status === 'on') {
-        //console.log('match - on');
-        $btn.data('status', 'on');
-        $btn.text('On');
-        $btn.removeClass('btn-secondary')
-        $btn.addClass('btn-primary')
+    if (status || status === `on`) {
+        //console.log(`match - on`);
+        $btn.data(`status`, `on`);
+        $btn.text(`On`);
+        $btn.removeClass(`btn-secondary`)
+        $btn.addClass(`btn-primary`)
     } else {
-        //console.log('match - off');
-        $btn.data('status', 'off');
-        $btn.text('Off');
-        $btn.removeClass('btn-primary')
-        $btn.addClass('btn-secondary')
+        //console.log(`match - off`);
+        $btn.data(`status`, `off`);
+        $btn.text(`Off`);
+        $btn.removeClass(`btn-primary`)
+        $btn.addClass(`btn-secondary`)
     }
     updateOnOffMaster(table);
 }
@@ -367,11 +367,11 @@ function updateOnOffButton(data, table, status) {
     // toggle btn
     table.rows().every(function () {
         const $row = $(this.node());
-        const $btn = $row.find('.toggle-btn');
-        //const text = $row.find('.item-object').text() + ", " + $row.find('.item-text').text();
-        const index = Number($row.find('.item-index').text())
+        const $btn = $row.find(`.toggle-btn`);
+        //const text = $row.find(`.item-object`).text() + `, ` + $row.find(`.item-text`).text();
+        const index = Number($row.find(`.item-index`).text())
 
-        //console.log("Check if : ", tree_index, index);
+        //console.log(`Check if : `, tree_index, index);
         if (index === tree_index) {
             toggleOnOffButton($btn, table, status);
         }
@@ -384,43 +384,43 @@ function updateDeselectAllButton(table) {
     const count = table.rows({ selected: true }).count();
 
     if (count > 0) {
-        $('#deselect-all').removeClass('disabled').removeClass('btn-secondary').addClass('btn-primary');
+        $(`#deselect-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
     } else {
-        $('#deselect-all').addClass('disabled').addClass('btn-secondary').removeClass('btn-primary');
+        $(`#deselect-all`).addClass(`disabled`).addClass(`btn-secondary`).removeClass(`btn-primary`);
     }
 }
 
 // run this when all page is ready.
 
 $(document).ready(function () {
-    const zoomInButton = $("#zoom-in");
-    const zoomOutButton = $("#zoom-out");
-    const zoomResetButton = $("#zoom-reset");
-    const zoomRange = $("#zoom-range");
-    const submitButton = $("#submit");
+    const zoomInButton = $(`#zoom-in`);
+    const zoomOutButton = $(`#zoom-out`);
+    const zoomResetButton = $(`#zoom-reset`);
+    const zoomRange = $(`#zoom-range`);
+    const submitButton = $(`#submit`);
 
     // set action for zoom buttons
     zoomRange.max = canvasUtils.maxZoom();
 
-    zoomInButton.on("click", function () {
+    zoomInButton.on(`click`, function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (-50);
         canvasUtils.zoom(zoom);
     });
 
-    zoomOutButton.on("click", function () {
+    zoomOutButton.on(`click`, function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (50);
         canvasUtils.zoom(zoom);
     });
 
-    zoomResetButton.on("click", function () {
+    zoomResetButton.on(`click`, function () {
         canvasUtils.resetZoom();
     });
 
-    zoomRange.on("input", function (event) {
+    zoomRange.on(`input`, function (event) {
         var zoom = parseFloat($(this).val());
-        const container = $("#canvas-container");
+        const container = $(`#canvas-container`);
         const width = container.width();
         const height = container.height();
 
@@ -434,7 +434,7 @@ $(document).ready(function () {
 
     // Event handler for canvas
 
-    canvas.on("mouse:wheel", function (opt) {
+    canvas.on(`mouse:wheel`, function (opt) {
         const delta = opt.e.deltaY;
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** delta;
@@ -460,7 +460,7 @@ $(document).ready(function () {
         canvasUtils.updateZoomButtons(zoom);
     });
 
-    canvas.on("mouse:down", function (opt) {
+    canvas.on(`mouse:down`, function (opt) {
         const evt = opt.e;
         if (evt.altKey === true) {
             this.selection = true;
@@ -475,7 +475,7 @@ $(document).ready(function () {
         }
     });
 
-    canvas.on("mouse:move", function (opt) {
+    canvas.on(`mouse:move`, function (opt) {
         if (this.isDragging) {
             const evt = opt.e;
             const vpt = this.viewportTransform;
@@ -496,7 +496,7 @@ $(document).ready(function () {
         }
     });
 
-    canvas.on("mouse:up", function (opt) {
+    canvas.on(`mouse:up`, function (opt) {
         // on mouse up we want to recalculate new interaction
         // for all objects, so we call setViewportTransform
         this.setViewportTransform(this.viewportTransform);
@@ -506,21 +506,21 @@ $(document).ready(function () {
 
     // Set up DataTable
 
-    let table = new DataTable('#output-table', {
-        dom: "lBfrtip",
+    let table = new DataTable(`#output-table`, {
+        dom: `lBfrtip`,
         order: 1,
         // set column width
         columnDefs: [
             {
-                width: '60px',
+                width: `60px`,
                 searchable: false,
                 orderable: false,
                 targets: [0],
             },
-            { width: '60px', targets: 1 },
+            { width: `60px`, targets: 1 },
         ],
         select: {
-            style: "multi"
+            style: `multi`
         },
     });
 
@@ -528,7 +528,7 @@ $(document).ready(function () {
 
     function getTree() {
         // get data from category_id and json_data
-        // category_id = { id: 0, desc: "name", count: 0 }
+        // category_id = { id: 0, desc: `name`, count: 0 }
         // jsonData contain all data in table
         var data = [];
         var child_nodes = [];
@@ -538,13 +538,13 @@ $(document).ready(function () {
             const categoryId = jsonData[j].CategoryID;
 
             if (!child_nodes[categoryId]) {
-                //console.log('create new child_node');
+                //console.log(`create new child_node`);
                 child_nodes[categoryId] = { nodes: [] };
             }
 
             child_nodes[categoryId].nodes.push({
                 tags: [jsonData[j].Index.toString()],
-                text: jsonData[j].Object + ", " + jsonData[j].Text,
+                text: jsonData[j].Object + `, ` + jsonData[j].Text,
                 state: { checked: false, },
             });
             //console.log(child_nodes)
@@ -557,7 +557,7 @@ $(document).ready(function () {
             const child_count = child_node.length;
 
             data.push({
-                text: "Class : " + id + " - " + category_name + " (" + child_count + ")",
+                text: `Class : ` + id + ` - ` + category_name + ` (` + child_count + `)`,
                 state: {
                     checked: false,
                     expanded: false,
@@ -569,55 +569,55 @@ $(document).ready(function () {
         return data;
     }
 
-    $('#tree').treeview({
+    $(`#tree`).treeview({
         data: getTree(),
-        checkedIcon: "fas fa-check-square",
-        uncheckedIcon: "far fa-square",
-        expandIcon: "fa fa-angle-right",
-        collapseIcon: "fa fa-angle-down",
+        checkedIcon: `fas fa-check-square`,
+        uncheckedIcon: `far fa-square`,
+        expandIcon: `fa fa-angle-right`,
+        collapseIcon: `fa fa-angle-down`,
         showCheckbox: true,
         showTags: false,
     });
 
-    $('#tree').on('nodeChecked', function (event, data) {
+    $(`#tree`).on(`nodeChecked`, function (event, data) {
         // If there is children then select all children.
         const children = data.nodes;
         if (children) {
             //console.log(data.nodes);
             for (var i = 0; i < children.length; i++) {
                 const node = children[i];
-                if (!node.state['checked']) {
-                    $('#tree').treeview("checkNode", [node.nodeId, { silent: true }]);
+                if (!node.state[`checked`]) {
+                    $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
                     updateOnOffButton(node, table, true);
                 }
             }
         } else {
             // check the parent if all children is checked then parent should be checked.
-            const parent = $('#tree').treeview("getParent", data.nodeId);
+            const parent = $(`#tree`).treeview(`getParent`, data.nodeId);
             //console.log(data.nodeId, parent);
             // unchecked parent
-            const child_count = $('#tree').treeview("getEnabled", parent.nodeID).length - 1;
-            const checked_count = $('#tree').treeview("getChecked", parent.nodeID).length;
+            const child_count = $(`#tree`).treeview(`getEnabled`, parent.nodeID).length - 1;
+            const checked_count = $(`#tree`).treeview(`getChecked`, parent.nodeID).length;
             if (checked_count == child_count) {
-                $('#tree').treeview('checkNode', [parent.nodeId, { silent: true }]);
+                $(`#tree`).treeview(`checkNode`, [parent.nodeId, { silent: true }]);
             }
             updateOnOffButton(data, table, true);
         }
         updateOnOffMaster(table);
-    }).on('nodeUnchecked', function (event, data) {
+    }).on(`nodeUnchecked`, function (event, data) {
         const children = data.nodes;
         if (children) {
             //console.log(data.nodes);
 
             for (var i = 0; i < children.length; i++) {
                 const node = children[i];
-                $('#tree').treeview('uncheckNode', [node.nodeId, { silent: true }]);
+                $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
                 updateOnOffButton(node, table, false);
             }
         } else {
             // uncheck parent
-            const parent = $('#tree').treeview('getParent', data.nodeId);
-            $('#tree').treeview('uncheckNode', [parent.nodeId, { silent: true }]);
+            const parent = $(`#tree`).treeview(`getParent`, data.nodeId);
+            $(`#tree`).treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
             updateOnOffButton(data, table, false);
         }
         updateOnOffMaster(table);
@@ -625,109 +625,109 @@ $(document).ready(function () {
 
     // toggle-on/off btn
 
-    table.on('click', '.toggle-btn', function (event) {
+    table.on(`click`, `.toggle-btn`, function (event) {
         event.stopPropagation(); // Prevent row selection
 
         const $btn = $(this);
-        const currentStatus = $btn.data('status');
+        const currentStatus = $btn.data(`status`);
         // Toggle the status and update botton text
-        if (currentStatus == 'off') {
-            $btn.data('status', 'on');
-            $btn.text('On');
-            $btn.removeClass('btn-secondary')
-            $btn.addClass('btn-primary')
+        if (currentStatus == `off`) {
+            $btn.data(`status`, `on`);
+            $btn.text(`On`);
+            $btn.removeClass(`btn-secondary`)
+            $btn.addClass(`btn-primary`)
         } else {
-            $btn.data('status', 'off');
-            $btn.text('Off');
-            $btn.removeClass('btn-primary')
-            $btn.addClass('btn-secondary')
+            $btn.data(`status`, `off`);
+            $btn.text(`Off`);
+            $btn.removeClass(`btn-primary`)
+            $btn.addClass(`btn-secondary`)
         }
-        updateTreeView($('#tree'), table);
+        updateTreeView($(`#tree`), table);
         updateOnOffMaster(table);
     });
 
     // Master toggle button functionality
-    $('#master-toggle').on('click', function () {
+    $(`#master-toggle`).on(`click`, function () {
         const $masterBtn = $(this);
-        const masterStatus = $masterBtn.data('status');
+        const masterStatus = $masterBtn.data(`status`);
 
         // Toggle the master button status and update text
-        if (masterStatus === 'off') {
-            $masterBtn.data('status', 'on');
-            $masterBtn.text('Hide all');
+        if (masterStatus === `off`) {
+            $masterBtn.data(`status`, `on`);
+            $masterBtn.text(`Hide all`);
             // Toggle all rows to on
             table.rows().every(function () {
                 const $row = $(this.node());
-                const $btn = $row.find('.toggle-btn');
+                const $btn = $row.find(`.toggle-btn`);
 
-                $btn.data('status', 'on');
-                $btn.text('On');
-                $btn.removeClass('btn-secondary').addClass('btn-primary')
+                $btn.data(`status`, `on`);
+                $btn.text(`On`);
+                $btn.removeClass(`btn-secondary`).addClass(`btn-primary`)
             });
         } else {
-            $masterBtn.data('status', 'off');
-            $masterBtn.text('Show all');
+            $masterBtn.data(`status`, `off`);
+            $masterBtn.text(`Show all`);
 
             // Toggle all rows to off
             table.rows().every(function () {
                 const $row = $(this.node());
-                const $btn = $row.find('.toggle-btn');
+                const $btn = $row.find(`.toggle-btn`);
 
-                $btn.data('status', 'off');
-                $btn.text('Off');
-                $btn.removeClass('btn-primary').addClass('btn-secondary')
+                $btn.data(`status`, `off`);
+                $btn.text(`Off`);
+                $btn.removeClass(`btn-primary`).addClass(`btn-secondary`)
             });
         }
-        updateTreeView($('#tree'), table);
+        updateTreeView($(`#tree`), table);
     });
 
-    $('#deselect-all').on('click', function () {
+    $(`#deselect-all`).on(`click`, function () {
         table.rows().deselect();
     });
 
     // display overlay when row is selected
     table
-        .on('select', function (e, dt, type, indexes) {
+        .on(`select`, function (e, dt, type, indexes) {
             //let rowData = table.rows(indexes).data().toArray();
-            let selected_rows = table.rows('.selected')[0];
+            let selected_rows = table.rows(`.selected`)[0];
 
             canvasUtils.displayOverlay(selected_rows);
             canvas.renderAll();
 
             // update Deselect All button
             updateDeselectAllButton(table);
-            //console.log('<b>' + type + ' selection</b> - ' + JSON.stringify(rowData));
+            //console.log(`<b>` + type + ` selection</b> - ` + JSON.stringify(rowData));
         })
-        .on('deselect', function (e, dt, type, indexes) {
+        .on(`deselect`, function (e, dt, type, indexes) {
             //let rowData = table.rows(indexes).data().toArray();
-            let selected_rows = table.rows('.selected')[0];
+            let selected_rows = table.rows(`.selected`)[0];
 
             canvasUtils.displayOverlay(selected_rows);
             canvas.renderAll();
 
             // update Deselect All button
             updateDeselectAllButton(table);
-            //console.log('<b>' + type + ' <i>de</i>selection</b> - ' + JSON.stringify(rowData));
+            //console.log(`<b>` + type + ` <i>de</i>selection</b> - ` + JSON.stringify(rowData));
         });
 
     //updateCategoryCheckboxes(chkCategories, table);
 
     // Get reference to select model_type
-    const modelSelect = $("select#selected_model");
-    const weightContainer = $("div#weight-path-container");
-    const configContainer = $("div#config-path-container");
-    const textOCRContainer = $("div#textOCR-container");
+    const modelSelect = $(`select#selected_model`);
+    const weightContainer = $(`div#weight-path-container`);
+    const configContainer = $(`div#config-path-container`);
+    const textOCRContainer = $(`div#textOCR-container`);
 
     // hide and unhide form depends on selected model_type
 
-    modelSelect.on("change", function () {
+    modelSelect.on(`change`, function () {
         const selectedValue = $(this).val();
         // Enable all dependent select
-        if (selectedValue == "yolov8") {
+        if (selectedValue == `yolov8`) {
             weightContainer.slideDown();
             configContainer.slideDown();
             //textOCRContainer.slideUp();
-        } else if (selectedValue == "easyocr") {
+        } else if (selectedValue == `easyocr`) {
             weightContainer.slideUp();
             configContainer.slideUp();
             //textOCRContainer.slideDown();
@@ -735,21 +735,21 @@ $(document).ready(function () {
     });
 
     // handler for file change
-    const fileInput = $("#file-input");
+    const fileInput = $(`#file-input`);
 
-    fileInput.on("change", function () {
+    fileInput.on(`change`, function () {
         const selectedFile = $(this).val();
 
         if (selectedFile) {
             submitButton
-                .prop("disabled", false)
-                .removeClass("btn-secondary")
-                .addClass("btn-primary");
+                .prop(`disabled`, false)
+                .removeClass(`btn-secondary`)
+                .addClass(`btn-primary`);
         } else {
             submitButton
-                .prop("disabled", true)
-                .removeClass("btn-primary")
-                .addClass("btn-secondary");
+                .prop(`disabled`, true)
+                .removeClass(`btn-primary`)
+                .addClass(`btn-secondary`);
         }
     });
 
@@ -758,49 +758,49 @@ $(document).ready(function () {
     //       for some reason the post method stop working, so I have to change
     //       the post sequence by adding new onsubmit function.
     //h
-    submitButton.on("click", function (event) {
+    submitButton.on(`click`, function (event) {
         //event.preventDefault();
-        //alert("Continue detecting symbols.");
-        $("#main-container").waitMe({
-            effect: 'win8_linear',
-            text: 'Please wait...',
+        //alert(`Continue detecting symbols.`);
+        $(`#main-container`).waitMe({
+            effect: `win8_linear`,
+            text: `Please wait...`,
         });
         // sumbit form to FastAPI
-        $("#main-form").submit();
+        $(`#main-form`).submit();
     });
 
-    $("#main-form").onsubmit = async (event) => {
+    $(`#main-form`).onsubmit = async (event) => {
         // Stop other thread
         event.preventDefault();
 
-        let res = await fetch("/submit", {
-            method: "POST",
-            body: new FormData($("#main-form")),
+        let res = await fetch(`/submit`, {
+            method: `POST`,
+            body: new FormData($(`#main-form`)),
         });
 
         if (res.ok) {
             let result = await res.text();
             document.innerHTML = result;
         } else {
-            document.innerHTML = 'Response error:', res.status;
+            document.innerHTML = `Response error:`, res.status;
         }
     };
 
-    $("#output-image")
-        .one("load", function () {
-            //console.log("Image has finished loading. (one)");
+    $(`#output-image`)
+        .one(`load`, function () {
+            //console.log(`Image has finished loading. (one)`);
         })
         .each(function () {
             if (this.complete) {
                 // image is finished loading
-                //console.log("Image has finished loading. (this.complete)");
+                //console.log(`Image has finished loading. (this.complete)`);
                 canvasUtils.onImageLoad(this);
                 canvasUtils.resetZoom();
             }
         })
-        .on("load", function () {
+        .on(`load`, function () {
             // image is finished loading
-            //console.log("Image has finished loading. (on.load)");
+            //console.log(`Image has finished loading. (on.load)`);
             canvasUtils.onImageLoad(this);
             canvasUtils.resetZoom();
         });
@@ -811,8 +811,8 @@ $(document).ready(function () {
 
     function adjustGridContainerHeight() {
         const windowHeight = $(window).height();
-        const gridContainer = $("#grid-container");
-        const canvasContainer = $("div#canvas-container");
+        const gridContainer = $(`#grid-container`);
+        const canvasContainer = $(`div#canvas-container`);
         // Calculate the available height for the grid container
         const containerHeight = Math.max(500, windowHeight - gridContainer.offset().top);
         // Set the hegiht of the grid container
@@ -829,8 +829,8 @@ $(document).ready(function () {
         const canvasWidth = gridContainer.width() - savedWidth;
         canvasContainer.height(canvasHeight);
         canvasContainer.width(canvasWidth);
-        $("div#zoom-menu-container").width(canvasWidth);
-        $("div#table-container").width(canvasWidth);
+        $(`div#zoom-menu-container`).width(canvasWidth);
+        $(`div#table-container`).width(canvasWidth);
         // set the canvas to new size
         canvas.setWidth(100);
         canvas.setHeight(canvasHeight);
@@ -840,7 +840,7 @@ $(document).ready(function () {
     }
 
     // Attach the resize event listener
-    $(window).on("resize", adjustGridContainerHeight);
+    $(window).on(`resize`, adjustGridContainerHeight);
 
     // Call the function initially
     adjustGridContainerHeight();
@@ -849,6 +849,6 @@ $(document).ready(function () {
     canvasUtils.resetZoom();
     canvas.renderAll();
 
-    updateTreeView($('#tree'), table);
-    //console.log("jQuery finished.");
+    updateTreeView($(`#tree`), table);
+    //console.log(`jQuery finished.`);
 });
