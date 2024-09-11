@@ -20,7 +20,7 @@ const canvasUtils = {
         const width = container.width();
         const height = container.height();
 
-        return Math.max(width / image_width, height / image_height);;
+        return Math.min(width / image_width, height / image_height);;
     },
 
     // zoom canvas to input value
@@ -52,6 +52,24 @@ const canvasUtils = {
         }
     },
 
+    calculatePosition: (x, y) => {
+        // Calculate the maximum allowed values
+        const offsetWidth = canvas.width - image_width * canvas.getZoom();
+        const offsetHeight = canvas.height - image_height * canvas.getZoom();
+        const minX = offsetWidth > 0 ? offsetWidth /2 : offsetWidth;
+        const maxX = offsetWidth > 0 ? offsetWidth / 2 : 0;
+        const minY = offsetWidth > 0 ? offsetHeight / 2 : offsetHeight;
+        const maxY = offsetHeight > 0 ? offsetHeight / 2 : 0;
+
+        // Adjust left and top values to stay within the limits
+        x = Math.max(Math.min(x, maxX), minX);
+        y = Math.max(Math.min(y, maxY), minY);
+        
+        var xy = [x, y];
+
+        return xy;
+     },
+
     zoom: function (zoom) {
         //var zoom = canvas.getZoom();
         const container = $(`#canvas-container`);
@@ -70,19 +88,15 @@ const canvasUtils = {
     // reset canvas zoom to fit container width
 
     resetZoom: function () {
-        var vpt = canvas.viewportTransform;
-        const container = $(`#canvas-container`);
-        const width = container.width();
-        const height = container.height();
-
         zoom = this.minZoom();
-        //
-        originalX = Math.floor((width - image_width * zoom) / 2);
-        originalY = Math.floor((height - image_height * zoom) / 2);
-        vpt[4] = 0;
-        vpt[5] = 0;
         $(`#zoom-range`).val(zoom);
         canvas.setZoom(zoom);
+        //
+        const vpt = canvas.viewportTransform;
+        const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
+
+        vpt[4] = xy[0];
+        vpt[5] = xy[1];
         canvas.calcOffset();
         canvas.renderAll();
     },
@@ -368,12 +382,24 @@ $(document).ready(function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (-50);
         canvasUtils.zoom(zoom);
+        
+        const vpt = canvas.viewportTransform;
+        const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
+
+        vpt[4] = xy[0];
+        vpt[5] = xy[1];
     });
 
     zoomOutButton.on(`click`, function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (50);
         canvasUtils.zoom(zoom);
+        
+        const vpt = canvas.viewportTransform;
+        const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
+
+        vpt[4] = xy[0];
+        vpt[5] = xy[1];
     });
 
     zoomResetButton.on(`click`, function () {
@@ -391,6 +417,13 @@ $(document).ready(function () {
         zoom = Math.max(zoom, canvasUtils.minZoom());
         canvas.zoomToPoint({ x: width / 2, y: height / 2 }, zoom);
         $(this).val(zoom);
+
+        const vpt = canvas.viewportTransform;
+        const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
+
+        vpt[4] = xy[0];
+        vpt[5] = xy[1];
+
         canvasUtils.updateZoomButtons(zoom);
         canvas.renderAll();
     });
@@ -408,16 +441,10 @@ $(document).ready(function () {
             zoomRange.val(zoom);
             //
             const vpt = this.viewportTransform;
+            const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
 
-            // Calculate the maximum allowed values
-            const maxLeft = 0;
-            const maxTop = 0;
-            const maxRight = -(image_width * canvas.getZoom() - canvas.width);
-            const maxBottom = - (image_height * canvas.getZoom() - canvas.height);
-
-            // Adjust left and top values to stay within the limits
-            vpt[4] = Math.max(Math.min(vpt[4], maxLeft), maxRight);
-            vpt[5] = Math.max(Math.min(vpt[5], maxTop), maxBottom);
+            vpt[4] = xy[0];
+            vpt[5] = xy[1];
 
             opt.e.preventDefault();
             opt.e.stopPropagation();
@@ -444,16 +471,10 @@ $(document).ready(function () {
         if (this.isDragging) {
             const evt = opt.e;
             const vpt = this.viewportTransform;
-
-            // Calculate the maximum allowed values
-            const maxLeft = 0;
-            const maxTop = 0;
-            const maxRight = -(image_width * canvas.getZoom() - canvas.width);
-            const maxBottom = - (image_height * canvas.getZoom() - canvas.height);
-
+            const xy = canvasUtils.calculatePosition(vpt[4] + evt.clientX - this.lastPosX, vpt[5] + evt.clientY - this.lastPosY);
             // Adjust left and top values to stay within the limits
-            vpt[4] = Math.max(Math.min(vpt[4] + evt.clientX - this.lastPosX, maxLeft), maxRight);
-            vpt[5] = Math.max(Math.min(vpt[5] + evt.clientY - this.lastPosY, maxTop), maxBottom);
+            vpt[4] = xy[0];
+            vpt[5] = xy[1];
 
             this.requestRenderAll();
             this.lastPosX = evt.clientX;
