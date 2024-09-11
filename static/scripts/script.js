@@ -262,57 +262,38 @@ const canvasUtils = {
     },
 };
 
-function updateTreeView(tree, table) {
-    var parent_nodes = [];
+function updateTreeView(index, toggleButtons, treeNodes, table) {
+    const $btn = toggleButtons[index];
+    const status = $btn.data(`status`) === `on` ? true : false;
+    const node = treeNodes[index];
+    //console.log(`find for `, text, `: found `, node);
+    //console.log(node.nodeId, ` to `, status);
+    if (status === true) {
+        $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
+    } else {
+        $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
+    }
 
-    table.rows().every(function () {
-        const $row = $(this.node());
-        const $btn = $row.find(`.toggle-btn`);
-        const status = $btn.data(`status`) === `on` ? true : false;
-        const text = $row.find(`.item-object`).text() + `, ` + $row.find(`.item-text`).text();
-        //console.log(text, status);
-        const nodes = $(`#tree`).treeview(`search`, [text, {
-            ignoreCase: true,     // case insensitive
-            exactMatch: true,    // like or equals
-            revealResults: false,  // reveal matching nodes
-        }]);
-
-        const node = nodes[0];
-        //console.log(`find for `, text, `: found `, node);
-        if (node) {
-            //console.log(node.nodeId, ` to `, status);
-            if (status === true) {
-                $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
-            } else {
-                $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
-            }
-        }
-
-        const parent = $(`#tree`).treeview(`getParent`, node.nodeId);
-
-        if (!parent_nodes.includes(parent)) {
-            parent_nodes.push(parent);
-        }
-    });
+    const parent = $(`#tree`).treeview(`getParent`, node.nodeId);
 
     // check the treeview for parent nodes
     //console.log(parent_nodes);
-    for (var i = 0; i < parent_nodes.length; i++) {
-        const childern = parent_nodes[i].nodes;
-        var count = 0;
+    let siblings = $(`#tree`).treeview(`getSiblings`, node.nodeId);
+    let checked_count = 0;
+    siblings.push(node);
 
-        for (var j = 0; j < childern.length; j++) {
-            if (childern[j].state[`checked`] == true) {
-                count++;
-            }
-        }
-
-        if (count == childern.length) {
-            $(`#tree`).treeview(`checkNode`, [parent_nodes[i].nodeId, { silent: true }]);
-        } else {
-            $(`#tree`).treeview(`uncheckNode`, [parent_nodes[i].nodeId, { silent: true }]);
+    for (let i = 0; i < siblings.length; i++) {
+        if (siblings[i].state[`checked`]) {
+            checked_count++;
         }
     }
+
+    if (checked_count === siblings.length) {
+        $(`#tree`).treeview(`checkNode`, [parent.nodeId, { silent: true }]);
+    } else {
+        $(`#tree`).treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
+    }
+
     // update display
     canvasUtils.displayBBX(table);
 }
@@ -344,7 +325,9 @@ function updateOnOffMaster(table) {
     }
 }
 
-function toggleOnOffButton($btn, table, status) {
+function updateOnOffButton(data, toggleButtons, table, status) {
+    const tree_index = Number(data.tags[0]);
+    const $btn = toggleButtons[tree_index - 1];
     if (status || status === `on`) {
         //console.log(`match - on`);
         $btn.data(`status`, `on`);
@@ -358,24 +341,6 @@ function toggleOnOffButton($btn, table, status) {
         $btn.removeClass(`btn-primary`)
         $btn.addClass(`btn-secondary`)
     }
-    updateOnOffMaster(table);
-}
-
-function updateOnOffButton(data, table, status) {
-    const tree_index = Number(data.tags[0]);
-
-    // toggle btn
-    table.rows().every(function () {
-        const $row = $(this.node());
-        const $btn = $row.find(`.toggle-btn`);
-        //const text = $row.find(`.item-object`).text() + `, ` + $row.find(`.item-text`).text();
-        const index = Number($row.find(`.item-index`).text())
-
-        //console.log(`Check if : `, tree_index, index);
-        if (index === tree_index) {
-            toggleOnOffButton($btn, table, status);
-        }
-    });
     // update display
     canvasUtils.displayBBX(table);
 }
@@ -579,6 +544,19 @@ $(document).ready(function () {
         showTags: false,
     });
 
+    // Get all node from treeview to save the node list
+    var treeNodes = [];
+    const allNode = $(`#tree`).treeview(`getEnabled`);
+
+    for (let i = 0; i < allNode.length; i++) {
+        const node = allNode[i];
+        const children = node.nodes;
+
+        if (!children) {
+            treeNodes.push(node);
+        }
+    }
+
     $(`#tree`).on(`nodeChecked`, function (event, data) {
         // If there is children then select all children.
         const children = data.nodes;
@@ -588,48 +566,62 @@ $(document).ready(function () {
                 const node = children[i];
                 if (!node.state[`checked`]) {
                     $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
-                    updateOnOffButton(node, table, true);
+                    updateOnOffButton(node, toggleButtons, table, true);
                 }
             }
         } else {
             // check the parent if all children is checked then parent should be checked.
             const parent = $(`#tree`).treeview(`getParent`, data.nodeId);
             //console.log(data.nodeId, parent);
-            // unchecked parent
-            const child_count = $(`#tree`).treeview(`getEnabled`, parent.nodeID).length - 1;
-            const checked_count = $(`#tree`).treeview(`getChecked`, parent.nodeID).length;
-            if (checked_count == child_count) {
+            //
+            let siblings = $(`#tree`).treeview(`getSiblings`, data.nodeId);
+            let checked_count = 0;
+            siblings.push(data);
+
+            for (let i = 0; i < siblings.length; i++) {
+                if (siblings[i].state[`checked`]) {
+                    checked_count++;
+                }
+            }
+            if (checked_count === siblings.length) {
                 $(`#tree`).treeview(`checkNode`, [parent.nodeId, { silent: true }]);
             }
-            updateOnOffButton(data, table, true);
+            updateOnOffButton(data, toggleButtons, table, true);
         }
         updateOnOffMaster(table);
     }).on(`nodeUnchecked`, function (event, data) {
         const children = data.nodes;
         if (children) {
             //console.log(data.nodes);
-
             for (var i = 0; i < children.length; i++) {
                 const node = children[i];
                 $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
-                updateOnOffButton(node, table, false);
+                updateOnOffButton(node, toggleButtons, table, false);
             }
         } else {
             // uncheck parent
             const parent = $(`#tree`).treeview(`getParent`, data.nodeId);
             $(`#tree`).treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
-            updateOnOffButton(data, table, false);
+            updateOnOffButton(data, toggleButtons, table, false);
         }
         updateOnOffMaster(table);
     });
 
     // toggle-on/off btn
+    let toggleButtons = [];
+
+    table.rows().every(function () {
+        const $row = $(this.node());
+        const $btn = $row.find(`.toggle-btn`);
+        toggleButtons.push($btn);
+    });
 
     table.on(`click`, `.toggle-btn`, function (event) {
         event.stopPropagation(); // Prevent row selection
 
         const $btn = $(this);
         const currentStatus = $btn.data(`status`);
+        const index = Number($btn.data(`index`)) - 1;
         // Toggle the status and update botton text
         if (currentStatus == `off`) {
             $btn.data(`status`, `on`);
@@ -642,7 +634,7 @@ $(document).ready(function () {
             $btn.removeClass(`btn-primary`)
             $btn.addClass(`btn-secondary`)
         }
-        updateTreeView($(`#tree`), table);
+        updateTreeView(index, toggleButtons, treeNodes, table)
         updateOnOffMaster(table);
     });
 
@@ -678,7 +670,10 @@ $(document).ready(function () {
                 $btn.removeClass(`btn-primary`).addClass(`btn-secondary`)
             });
         }
-        updateTreeView($(`#tree`), table);
+
+        for (let i = 0; i < toggleButtons.length; i++) {
+            updateTreeView(i, toggleButtons, treeNodes, table)
+        }
     });
 
     $(`#deselect-all`).on(`click`, function () {
@@ -770,13 +765,13 @@ $(document).ready(function () {
     });
 
     $(`#main-form`).onsubmit = async (event) => {
-        // Stop other thread
-        event.preventDefault();
-
         let res = await fetch(`/submit`, {
             method: `POST`,
             body: new FormData($(`#main-form`)),
         });
+
+        // Stop other thread
+        event.preventDefault();
 
         if (res.ok) {
             let result = await res.text();
@@ -849,6 +844,9 @@ $(document).ready(function () {
     canvasUtils.resetZoom();
     canvas.renderAll();
 
-    updateTreeView($(`#tree`), table);
+    for (let i = 0; i < toggleButtons.length; i++) {
+        updateTreeView(i, toggleButtons, treeNodes, table)
+    }
+    
     //console.log(`jQuery finished.`);
 });

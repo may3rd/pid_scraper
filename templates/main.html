@@ -133,7 +133,7 @@
           <tbody id="table-body">
             {% for item in table_data %}
             <tr>
-              <td class="text-center"><div class="d-grid"><button class="toggle-btn btn btn-sm btn-primary small tiny-font" data-status="on">On</button></div></td>
+              <td class="text-center"><div class="d-grid"><button class="toggle-btn btn btn-sm btn-primary small tiny-font" data-status="on" data-index="{{ item.Index }}">On</button></div></td>
               <td class="item-index text-center">{{ item.Index }}</td>
               <td class="item-object">{{ item.Object }}</td>
               <td class="item-text">{{ item.Text }}</td>
