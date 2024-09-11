@@ -1,0 +1,27 @@
+/* Apply styles to the grid container */
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    min-height: 200px;
+    position: relative;
+}
+
+/* Style for each image box */
+.image-box {
+    border: 1px solid #ddd;
+}
+
+.image-box-none {
+    border: 1px solid #ddd;
+    pointer-events: none;
+}
+
+.menu-container {
+    padding: 10px;
+}
+
+.toggle-column {
+    width: 80px;
+}
