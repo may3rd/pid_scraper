@@ -291,12 +291,12 @@ async def inferencing_image_and_text(
             "Index": index,
             "Object": object_category,
             "CategoryID": object_category_id,
+            "ObjectID": category_object_count[object_category_id] + 1,
             "Left": math.floor(x),
             "Top": math.floor(y),
             "Width": math.ceil(w),
             "Height": math.ceil(h),
             "Score": round(prediction.score.value, 3),
-            "Id": prediction.category.id,
             "Text": f"number {str(category_object_count[object_category_id] + 1)}",
             #"Text": f"class:object: ({object_category_id}:{str(category_object_count[object_category_id])}) (No text)",
         })
@@ -320,8 +320,14 @@ async def inferencing_image_and_text(
                 table_data[index]["Text"] = txt_to_display
                 #print(txt_to_display)
 
+    # sort table_data by 'CategoryID' then 'ObjectID'
+    sorted_data = sorted(table_data, key=lambda x: (x['CategoryID'], x['ObjectID']))
+
+    for i in range(len(sorted_data)):
+        sorted_data[i]["Index"] = i + 1
+
     # Convert data table to JSON data
-    json_data = json.dumps(table_data)
+    json_data = json.dumps(sorted_data)
 
     # save category id and name for create checkbox table
     checkboxes = []
@@ -343,7 +349,7 @@ async def inferencing_image_and_text(
         {
             "request": request,
             "image1": True,
-            "table_data": table_data,
+            "table_data": sorted_data,
             "json_data": json_data,
             "weight_files": WEIGHT_FILE_LIST,
             "config_files": CONFIG_FILE_LIST,

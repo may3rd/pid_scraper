@@ -562,7 +562,7 @@ $(document).ready(function () {
 
             //console.log(j, jsonData[j].Id, jsonData[j].Text);
 
-            var categoryId = jsonData[j].Id;
+            var categoryId = jsonData[j].CategoryID;
 
             if (!child_nodes[categoryId]) {
                 //console.log('create new child_node');
