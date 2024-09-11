@@ -1,0 +1,1 @@
+yolo task=detect mode=train data=datasets/balanced/balanced.yaml model=yolov8s.pt epochs=300 batch=16 imgsz=640 name=PPCL_balanced_dataset exist_ok=True device=mps flipud=False fliplr=False
