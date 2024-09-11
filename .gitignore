@@ -172,4 +172,4 @@ yolo_weights/
 
 # include
 !datasets/template/
-!datastes/yaml/
+!datasets/yaml/
