@@ -129,7 +129,7 @@ templates = Jinja2Templates(directory="templates")
 async def main(request: Request):
     # Create dummy table
     table_data = []
-    count = 50;
+    count = 7;
 
     for idx in range(count):
         table_data.append({

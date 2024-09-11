@@ -10,32 +10,31 @@
   <link rel="icon" href="{{ url_for('static', path='images/cropped-gcme.webp') }}" size="32x32" />
   <link rel="icon" href="{{ url_for('static', path='images/cropped-gcme.webp') }}" size="192x192" />
   <link rel="apple-touch-icon" href="{{ url_for('static', path='images/cropped-gcme.webp') }}" />
-  <link rel="stylesheet" href="{{ url_for('static', path='css/fontawesome.min.css') }}" />
-  <link rel="stlysheet" href="{{ url_for('static', path='scripts/bootstrap-treeview-1.2.0/src/css/bootstrap-treeview.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/all.min.css') }}" />
+  <link rel="stlysheet" href="{{ url_for('static', path='css/bootstrap-treeview.css') }}" />
   <script src="{{ url_for('static', path='scripts/fabric.min.js') }}"></script>
   <script src="{{ url_for('static', path='scripts/jquery-3.7.0.js') }}"></script>
-  <script src="{{ url_for('static', path='scripts/bootstrap-treeview-1.2.0/src/js/bootstrap-treeview.js') }}"></script>
+  <script src="{{ url_for('static', path='scripts/bootstrap-treeview.js') }}"></script>
   <script>
     var jsonData = {{ json_data|safe }};
     var categoryData = {{ category_id|safe }};
   </script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" />
   <!-- MDB -->
-  <link rel="stylesheet" href="{{ url_for('static', path='MDB5/css/mdb.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', path='css/mdb.min.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/bootstrap.min.css') }}" />
 
   <!-- DataTable -->
   <link rel="stylesheet" href="{{ url_for('static', path='css/jquery.dataTables.min.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/select.dataTables.min.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', path='css/buttons.dataTables.min.css') }}" />
-  <script src="{{ url_for('static', path='DataTables/jquery.dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', path='scripts/jquery.dataTables.min.js') }}"></script>
   <script src="{{ url_for('static', path='scripts/dataTables.select.min.js') }}"></script>
   <script src="{{ url_for('static', path='scripts/dataTables.buttons.min.js') }}"></script>
 
   <!-- Waitme -->
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='waitMe/waitMe.css') }}" />
-  <script src="{{ url_for('static', path='waitMe/waitMe.min.js') }}"></script>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/waitMe.min.css') }}" />
+  <script src="{{ url_for('static', path='scripts/waitMe.min.js') }}"></script>
   <style>
     body,
     html {
