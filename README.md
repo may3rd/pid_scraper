@@ -18,10 +18,9 @@ Process Piping and Instrumentation Diagram (P&amp;ID) images to extract relevant
 8. Identify differences between P&ID versions
 
 ## Current status
-
--   Fine tune for valve detction using yolov8.
--   Try to use CoreML model to inference the PID symbols (valve, instrument tag, page connection)
+- Upgrade web UI
+- Customize EasyOCR or other text ocr to extract text from P&amp;ID
 
 ## TODO
 
--   Customize EasyOCR or other text ocr to extract text from P&amp;ID
+- Fine tune the model for other P&amp;ID of other plants.
