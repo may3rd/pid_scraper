@@ -5,7 +5,7 @@
 var image_height = 100;
 var image_width = 100;
 
-const canvas = new fabric.Canvas(`canvas`);
+const canvas = new fabric.Canvas(`canvas`, { backgroundColor: "#CFCECF" });
 canvas.selection = false; // disable group selection
 
 // define utlities for canvas displaying
@@ -20,29 +20,40 @@ const canvasUtils = {
 
         return Math.min(width / image_width, height / image_height);
     },
+    allZoom: function () { return this.minZoom();  },
+    toFitZoom: function () {
+        const container = $(`#canvas-container`);
+        const width = container.width();
+        const height = container.height();
+
+        return Math.max(width / image_width, height / image_height);
+    },
 
     // zoom canvas to input value
     updateZoomButtons: function (zoom, runFlag) {
         if (runFlag) {
             const minZoom = canvasUtils.minZoom();
             const maxZoom = canvasUtils.maxZoom();
-
+            
             if (zoom === minZoom) {
                 // disable zoom out and reset button
                 $(`#zoom-in`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-out`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-one`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-to-fit`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
             } else if (zoom === maxZoom) {
                 // disable zoom in button
                 $(`#zoom-in`).addClass(`disabled`).addClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-out`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-one`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-to-fit`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
             } else {
                 // enable all zoom buttons
                 $(`#zoom-in`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-out`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+                $(`#zoom-one`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
                 $(`#zoom-to-fit`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
             }
@@ -57,9 +68,10 @@ const canvasUtils = {
         // Calculate the maximum allowed values
         const offsetWidth = canvas.width - image_width * canvas.getZoom();
         const offsetHeight = canvas.height - image_height * canvas.getZoom();
+
         const minX = offsetWidth > 0 ? offsetWidth /2 : offsetWidth;
         const maxX = offsetWidth > 0 ? offsetWidth / 2 : 0;
-        const minY = offsetWidth > 0 ? offsetHeight / 2 : offsetHeight;
+        const minY = offsetHeight > 0 ? offsetHeight / 2 : offsetHeight;
         const maxY = offsetHeight > 0 ? offsetHeight / 2 : 0;
 
         // Adjust left and top values to stay within the limits
@@ -72,54 +84,26 @@ const canvasUtils = {
      },
 
     zoom: function (zoom, runFlag) {
-        //var zoom = canvas.getZoom();
         const container = $(`#canvas-container`);
         const width = container.width();
         const height = container.height();
-        //zoom *= 0.999 ** factor;
+        // Validate the zoom factor
         zoom = Math.min(zoom, this.maxZoom());
         zoom = Math.max(zoom, this.minZoom());
         canvas.zoomToPoint({ x: width / 2, y: height / 2 }, zoom);
-        $(`#zoom-range`).val(zoom);
-        // update zoom buttons
-        this.updateZoomButtons(zoom, runFlag);
-        canvas.renderAll();
-    },
-
-    // reset canvas zoom to fit container width
-
-    zoomAll: function (runFlag) {
-        zoom = this.minZoom();
-        $(`#zoom-range`).val(zoom);
-        canvas.setZoom(zoom);
-        //
+        // Ensure that the image is located inside canvas
         const vpt = canvas.viewportTransform;
         const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
 
         vpt[4] = xy[0];
         vpt[5] = xy[1];
-        this.updateZoomButtons(zoom, runFlag);
-        canvas.calcOffset();
-        canvas.renderAll();
-    },
 
-    // reset canvas zoom to fit container width
-
-    zoomTofit: function (runFlag) {
-        const container = $(`#canvas-container`);
-        const width = container.width();
-        const height = container.height();
-
-        const zoom = Math.max(width / image_width, height / image_height);
+        // Update interface
         $(`#zoom-range`).val(zoom);
-        canvas.setZoom(zoom);
-        //
-        const vpt = canvas.viewportTransform;
-        const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
 
-        vpt[4] = xy[0];
-        vpt[5] = xy[1];
+        // Update zoom buttons
         this.updateZoomButtons(zoom, runFlag);
+
         canvas.calcOffset();
         canvas.renderAll();
     },
@@ -181,11 +165,11 @@ const canvasUtils = {
                 //canvas.add(box);
                 boxes.push(box);
             });
-            var group = new fabric.Group(boxes);
+            var group = new fabric.Group(boxes, {selectable: false,});
             canvas.add(group);
         }
         // reset zoom
-        canvasUtils.zoomAll();
+        canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
     },
 
     // Event handlers
@@ -201,7 +185,7 @@ const canvasUtils = {
         } else {
             runFlag = true;
             this.addItemsToCanvas(image, runFlag);
-            this.updateZoomButtons(zoom, runFlag);
+            this.updateZoomButtons(canvas.getZoom(), runFlag);
             const buttons = $(`div#zoom-btn-container button`);
             buttons.prop(`disabled`, false);
             $(`#zoom-range`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
@@ -212,7 +196,8 @@ const canvasUtils = {
 
     // Create overlay display when row is selected
     displayOverlay: function (selectd_rows) {
-        // TODO
+        // Check if it arlready has mask layer.
+        // If yes then remove it first.
         const objects = canvas.getObjects();
         if (objects.length > 2) {
             // remove last object
@@ -259,7 +244,7 @@ const canvasUtils = {
     },
 
     // draw box on button On/Off status
-    toggleBBox(index, flag) {
+    setBBoxOpacity(index, flag) {
         const group = canvas.item(1);
         const opc = flag ? 1 : 0
         group.item(index).set(`opacity`, opc);
@@ -300,7 +285,6 @@ function updateTreeView(index, toggleButtons, treeNodes) {
 }
 
 function updateOnOffMaster(buttons) {
-    // check btn status again for master button
     let isOff = false
 
     for (let i = 0; i < buttons.length; i++) {
@@ -337,7 +321,7 @@ function toggleOnOffButton(index, toggleButtons, status) {
         $btn.addClass(`btn-secondary`)
     }
     // update display
-    canvasUtils.toggleBBox(index, status);
+    canvasUtils.setBBoxOpacity(index, status);
 }
 
 function updateDeselectAllButton(table) {
@@ -354,17 +338,10 @@ function updateDeselectAllButton(table) {
 
 $(document).ready(function () {
     let runFlag = false;
-    const zoomInButton = $(`#zoom-in`);
-    const zoomOutButton = $(`#zoom-out`);
-    const zoomAllButton = $(`#zoom-all`);
-    const zoomTofitButton = $(`#zoom-to-fit`)
-    const zoomRange = $(`#zoom-range`);
-    const submitButton = $(`#submit`);
 
     // set action for zoom buttons
-    zoomRange.max = canvasUtils.maxZoom();
 
-    zoomInButton.on(`click`, function () {
+    $(`#zoom-in`).on(`click`, function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (-50);
         canvasUtils.zoom(zoom, runFlag);
@@ -374,9 +351,11 @@ $(document).ready(function () {
 
         vpt[4] = xy[0];
         vpt[5] = xy[1];
+
+        this.blur();
     });
 
-    zoomOutButton.on(`click`, function () {
+    $(`#zoom-out`).on(`click`, function () {
         var zoom = canvas.getZoom();
         zoom *= 0.999 ** (50);
         canvasUtils.zoom(zoom, runFlag);
@@ -386,17 +365,26 @@ $(document).ready(function () {
 
         vpt[4] = xy[0];
         vpt[5] = xy[1];
+
+        this.blur();
     });
 
-    zoomAllButton.on(`click`, function () {
-        canvasUtils.zoomAll(runFlag);
+    $(`#zoom-one`).on(`click`, function () {
+        canvasUtils.zoom(1.0, runFlag);
+        this.blur();
     });
 
-    zoomTofitButton.on(`click`, function () {
-        canvasUtils.zoomTofit(runFlag);
+    $(`#zoom-all`).on(`click`, function () {
+        canvasUtils.zoom(canvasUtils.allZoom(), runFlag);
+        this.blur();
     });
 
-    zoomRange.on(`input`, function (event) {
+    $(`#zoom-to-fit`).on(`click`, function () {
+        canvasUtils.zoom(canvasUtils.toFitZoom(), runFlag);
+        this.blur();
+    });
+
+    $(`#zoom-range`).on(`input`, function (event) {
         var zoom = parseFloat($(this).val());
         const container = $(`#canvas-container`);
         const width = container.width();
@@ -415,6 +403,7 @@ $(document).ready(function () {
 
         canvasUtils.updateZoomButtons(zoom, runFlag);
         canvas.renderAll();
+        $(`#zoom-range`).blur();
     });
 
     // Event handler for canvas
@@ -427,7 +416,7 @@ $(document).ready(function () {
             zoom = Math.min(zoom, canvasUtils.maxZoom());
             zoom = Math.max(zoom, canvasUtils.minZoom());
             canvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom);
-            zoomRange.val(zoom);
+            $(`#zoom-range`).val(zoom);
             //
             const vpt = this.viewportTransform;
             const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
@@ -481,7 +470,7 @@ $(document).ready(function () {
 
     // Set up DataTable
 
-    let table = new DataTable(`#output-table`, {
+    const table = new DataTable(`#output-table`, {
         dom: `lBfrtip`,
         order: 1,
         // set column width
@@ -645,8 +634,10 @@ $(document).ready(function () {
             $btn.addClass(`btn-secondary`)
         }
         updateTreeView(index, toggleButtons, treeNodes);
-        canvasUtils.toggleBBox(index, !currentStatus);
+        canvasUtils.setBBoxOpacity(index, !currentStatus);
         updateOnOffMaster(toggleButtons);
+        
+        this.blur();
     });
 
     // Master toggle button functionality
@@ -683,12 +674,14 @@ $(document).ready(function () {
 
         for (let i = 0; i < toggleButtons.length; i++) {
             updateTreeView(i, toggleButtons, treeNodes)
-            canvasUtils.toggleBBox(i, !masterStatus);
+            canvasUtils.setBBoxOpacity(i, !masterStatus);
         }
+        this.blur();
     });
 
     $(`#deselect-all`).on(`click`, function () {
         table.rows().deselect();
+        this.blur();
     });
 
     // display overlay when row is selected
@@ -698,8 +691,6 @@ $(document).ready(function () {
             let selected_rows = table.rows(`.selected`)[0];
 
             canvasUtils.displayOverlay(selected_rows);
-            canvas.renderAll();
-
             // update Deselect All button
             updateDeselectAllButton(table);
             //console.log(`<b>` + type + ` selection</b> - ` + JSON.stringify(rowData));
@@ -709,14 +700,10 @@ $(document).ready(function () {
             let selected_rows = table.rows(`.selected`)[0];
 
             canvasUtils.displayOverlay(selected_rows);
-            canvas.renderAll();
-
             // update Deselect All button
             updateDeselectAllButton(table);
             //console.log(`<b>` + type + ` <i>de</i>selection</b> - ` + JSON.stringify(rowData));
         });
-
-    //updateCategoryCheckboxes(chkCategories, table);
 
     // Get reference to select model_type
     const modelSelect = $(`select#selected_model`);
@@ -741,30 +728,31 @@ $(document).ready(function () {
     });
 
     // handler for file change
+
     const fileInput = $(`#file-input`);
 
     fileInput.on(`change`, function () {
         const selectedFile = $(this).val();
 
         if (selectedFile) {
-            submitButton
+            $(`#submit`)
                 .prop(`disabled`, false)
                 .removeClass(`btn-secondary`)
                 .addClass(`btn-primary`);
         } else {
-            submitButton
+            $(`#submit`)
                 .prop(`disabled`, true)
                 .removeClass(`btn-primary`)
                 .addClass(`btn-secondary`);
         }
     });
-
+    //
     // submitButton event
     // Note: 11 Sep 2024
     //       for some reason the post method stop working, so I have to change
     //       the post sequence by adding new onsubmit function.
-    //h
-    submitButton.on(`click`, function (event) {
+    //
+    $(`#submit`).on(`click`, function (event) {
         //event.preventDefault();
         //alert(`Continue detecting symbols.`);
         $(`#main-container`).waitMe({
@@ -791,7 +779,9 @@ $(document).ready(function () {
             document.innerHTML = `Response error:`, res.status;
         }
     };
-
+    //
+    // Event handling when image is loaded
+    //
     $(`#output-image`)
         .one(`load`, function () {
             //console.log(`Image has finished loading. (one)`);
@@ -808,8 +798,9 @@ $(document).ready(function () {
             //console.log(`Image has finished loading. (on.load)`);
             runFlag = canvasUtils.onImageLoad(this);
         });
-
+    //
     // Auto adjust grid container height when window change size
+    //
     var savedHeight = 0;
     var savedWidth = 0;
 
@@ -819,6 +810,13 @@ $(document).ready(function () {
         const canvasContainer = $(`div#canvas-container`);
         // Calculate the available height for the grid container
         const containerHeight = Math.max(500, windowHeight - gridContainer.offset().top);
+        // determine current zoom stage
+        // 0 = zoom all
+        // 1 = zoom to fit
+        // -1 not above
+        let zoomStage = canvas.getZoom() === canvasUtils.allZoom() ? 0 : -1;
+        zoomStage = canvas.getZoom() === canvasUtils.toFitZoom() ? 1 : zoomStage;
+
         // Set the hegiht of the grid container
         gridContainer.height(containerHeight);
         // Save the height difference for the future adjustments
@@ -831,16 +829,32 @@ $(document).ready(function () {
         // Adjust the canvas container hegiht based on teh save height difference
         const canvasHeight = containerHeight - savedHeight;
         const canvasWidth = gridContainer.width() - savedWidth;
+
         canvasContainer.height(canvasHeight);
         canvasContainer.width(canvasWidth);
-        $(`div#zoom-menu-container`).width(canvasWidth);
-        $(`div#table-container`).width(canvasWidth);
         // set the canvas to new size
-        canvas.setWidth(100);
         canvas.setHeight(canvasHeight);
         canvas.setWidth(canvasWidth);
         canvas.calcOffset();
-        canvasUtils.zoomAll();
+
+        // reset zoom
+        switch (zoomStage) {
+            case 0:
+                canvasUtils.zoom(canvasUtils.allZoom(), runFlag);
+                break;
+            case 1:
+                canvasUtils.zoom(canvasUtils.toFitZoom(), runFlag);
+                break;
+            default:
+                break;
+        }
+
+        // Check and correct the image position.
+        const vpt = canvas.viewportTransform;
+        const xy = canvasUtils.calculatePosition(vpt[4], vpt[5]);
+
+        vpt[4] = xy[0];
+        vpt[5] = xy[1];
     }
 
     // Attach the resize event listener
@@ -849,9 +863,7 @@ $(document).ready(function () {
     // Call the function initially
     adjustGridContainerHeight();
 
-    // for some reason zoomAll() need to be called twice.
-    canvasUtils.zoomAll();
-    canvas.renderAll();
+    canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
 
     for (let i = 0; i < toggleButtons.length; i++) {
         updateTreeView(i, toggleButtons, treeNodes)

@@ -35,6 +35,8 @@
   <!-- Waitme -->
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='css/waitMe.min.css') }}" />
   <script src="{{ url_for('static', path='scripts/waitMe.min.js') }}"></script>
+
+  <link rel="stylesheet" href="{{ url_for('static', path='css/rangeinput.css') }}" />
   <style>
     body,
     html {
@@ -105,14 +107,15 @@
       <div id="zoom-menu-container" class="zoom-menu-container">
         <div class="container text-center mt-1 mb-1">
           <div class="row">
-            <div id="zoom-btn-container" class="col w-50 align-self-end h-auto">
+            <div id="zoom-btn-container" class="col w-75 align-self-end h-auto">
               <button zoom-in id="zoom-in" class="btn btn-secondary btn-sm tiny-font" type="button" disabled>Zoom In</button>
               <button zoom-out id="zoom-out" class="btn btn-secondary btn-sm tiny-font" type="button" disabled>Zoom Out</button>
+              <button zoom-org id="zoom-one" class="btn btn-secondary btn-sm tiny-font" type="button" disabled>1:1</button>
               <button zoom-tofit id="zoom-to-fit" class="btn btn-secondary btn-sm tiny-font" type="button" disabled>Zoom to fit</button>
               <button zoom-all id="zoom-all" class="btn btn-secondary btn-sm tiny-font" type="button" disabled>Zoom all</button>
             </div>
             <div class="col">
-              <div id="inputrangeHelpBlock" class="form-text">Slide to zoom.</div>
+              <div id="zoom-text" class="form-text small-font">Slide to zoom.</div>
               <input id="zoom-range" class="form-range" type="range" min="0.1" max="10" step="0.1" value="1" disabled/>
             </div>
           </div>
