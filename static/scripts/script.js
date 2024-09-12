@@ -390,8 +390,6 @@ $(document).ready(function () {
         const width = container.width();
         const height = container.height();
 
-        zoom = Math.min(zoom, canvasUtils.maxZoom());
-        zoom = Math.max(zoom, canvasUtils.minZoom());
         canvas.zoomToPoint({ x: width / 2, y: height / 2 }, zoom);
         $(this).val(zoom);
 
@@ -403,7 +401,8 @@ $(document).ready(function () {
 
         canvasUtils.updateZoomButtons(zoom, runFlag);
         canvas.renderAll();
-        $(`#zoom-range`).blur();
+    }).on(`mouse:up`, function () {
+        this.blur();
     });
 
     // Event handler for canvas
