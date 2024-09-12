@@ -1,3 +1,5 @@
+import uvicorn
+
 from fastapi import FastAPI, Request, Form, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -358,3 +360,7 @@ async def inferencing_image_and_text(
             "category_id": checkboxes,
         }
     )
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", reload=True)
+    
