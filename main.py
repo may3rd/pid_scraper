@@ -131,7 +131,7 @@ templates = Jinja2Templates(directory="templates")
 async def main(request: Request):
     # Create dummy table
     table_data = []
-    count = 7;
+    count = 15;
 
     for idx in range(count):
         table_data.append({
@@ -156,6 +156,7 @@ async def main(request: Request):
         "main.html",
         {
             "request": request,
+            "runFlag": False,
             "table_data": table_data,
             "json_data": json_data,
             "weight_files": WEIGHT_FILE_LIST,
@@ -356,7 +357,7 @@ async def inferencing_image_and_text(
         "main.html",
         {
             "request": request,
-            "image1": True,
+            "runFlag": True,
             "table_data": sorted_data,
             "json_data": json_data,
             "weight_files": WEIGHT_FILE_LIST,

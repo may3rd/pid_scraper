@@ -40,24 +40,24 @@ const canvasUtils = {
             const maxZoom = canvasUtils.maxZoom();
             
             // enable all zoom buttons
-            $(`#zoom-in`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-out`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-one`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-to-fit`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-in`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-out`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-one`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
+            $(`#zoom-to-fit`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
             
             if (zoom === minZoom) {
                 // disable zoom out and reset button
-                $(`#zoom-out`).addClass(`disabled`).addClass(`btn-secondary`).removeClass(`btn-primary`);
-                $(`#zoom-all`).addClass(`disabled`).addClass(`btn-seconday`).removeClass(`btn-primary`);
+                $(`#zoom-out`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+                $(`#zoom-all`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
             } else if (zoom === maxZoom) {
                 // disable zoom in button
-                $(`#zoom-in`).addClass(`disabled`).addClass(`btn-secondary`).removeClass(`btn-primary`);
+                $(`#zoom-in`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
             } else if (zoom === 1.0) {
                 // enable all zoom buttons
-                $(`#zoom-one`).addClass(`disabled`).addClass(`btn-secondary`).removeClass(`btn-primary`);
+                $(`#zoom-one`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
             } else if (zoom === this.toFitZoom()) {
-                $(`#zoom-to-fit`).addClass(`disabled`).addClass(`btn-secondary`).removeClass(`btn-primary`);
+                $(`#zoom-to-fit`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
             }
             // Update the zoom-range input by the current value.
             document.getElementById(`zoom-range`).min = minZoom;
@@ -99,8 +99,6 @@ const canvasUtils = {
         vpt[4] = xy[0];
         vpt[5] = xy[1];
         canvas.renderAll();
-
-        document.getElementById(`position`).innerHTML = `(` + parseFloat(xy[0]).toFixed(0) + `,` + parseFloat(xy[1]).toFixed(0) + `)`;
      },
 
     zoom: function (zoom, runFlag) {
@@ -126,11 +124,11 @@ const canvasUtils = {
 
         if (imageSrc.slice(-15) === `gcmethumb-3.png`) {
             runFlag = false;
-            this.addItemsToCanvas(image, runFlag);
+            this.addItemsToCanvas(image);
         } else {
             runFlag = true;
-            this.addItemsToCanvas(image, runFlag);
-            this.updateZoomButtons(canvas.getZoom(), runFlag);
+            this.addItemsToCanvas(image);
+            this.updateZoomButtons(canvas.getZoom());
             const buttons = $(`div#zoom-btn-container button`);
             buttons.prop(`disabled`, false);
             $(`#zoom-range`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
@@ -139,7 +137,7 @@ const canvasUtils = {
         return runFlag;
     },
 
-    addItemsToCanvas: function (image, runFlag) {
+    addItemsToCanvas: function (image) {
         // runFlag is True if model is run.
         // runFlag is False when the fresh start.
         const hexColor = [
@@ -311,7 +309,7 @@ function toggleMasterOnOffBBoxButton(index) {
     $(`#master-toggle`).text(masterOnOffButtonTxt[index]);
 }
 
-function toggleOnOffButton(index, toggleButtons, status) {
+function toggleOnOffButton(index, toggleButtons, status, runFlag) {
     const $btn = toggleButtons[index];
     if (status || status === `on`) {
         //console.log(`match - on`);
@@ -335,14 +333,14 @@ function updateDeselectAllButton(table) {
     const all = table.rows().count();
 
     if (count === all) {
-        $(`#deselect-all`).removeClass(`disabled`).addClass(`btn-primary`).removeClass(`btn-secondary`);
-        $(`#select-all`).addClass(`disabled`).removeClass(`btn-primary`).addClass(`btn-secondary`);
+        $(`#deselect-all`).prop(`disabled`, false).addClass(`btn-primary`).removeClass(`btn-secondary`);
+        $(`#select-all`).prop(`disabled`, true).removeClass(`btn-primary`).addClass(`btn-secondary`);
      } else if (count > 0) {
-        $(`#deselect-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
-        $(`#select-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+        $(`#deselect-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
+        $(`#select-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
     } else {
-        $(`#deselect-all`).addClass(`disabled`).addClass(`btn-secondary`).removeClass(`btn-primary`);
-        $(`#select-all`).removeClass(`disabled`).removeClass(`btn-secondary`).addClass(`btn-primary`);
+        $(`#deselect-all`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+        $(`#select-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
     }
 }
 
@@ -550,7 +548,7 @@ $(document).ready(function () {
                 const node = children[i];
                 if (!node.state[`checked`]) {
                     $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
-                    toggleOnOffButton(Number(node.tags[0]) - 1, toggleButtons, true);
+                    toggleOnOffButton(Number(node.tags[0]) - 1, toggleButtons, true, runFlag);
                 }
             }
         } else {
@@ -570,7 +568,7 @@ $(document).ready(function () {
             if (checked_count === siblings.length) {
                 $(`#tree`).treeview(`checkNode`, [parent.nodeId, { silent: true }]);
             }
-            toggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, true);
+            toggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, true, runFlag);
         }
         updateOnOffMaster(toggleButtons);
     });
@@ -582,13 +580,13 @@ $(document).ready(function () {
             for (var i = 0; i < children.length; i++) {
                 const node = children[i];
                 $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
-                toggleOnOffButton(Number(node.tags[0]) - 1, toggleButtons, false);
+                toggleOnOffButton(Number(node.tags[0]) - 1, toggleButtons, false, runFlag);
             }
         } else {
             // uncheck parent
             const parent = $(`#tree`).treeview(`getParent`, data.nodeId);
             $(`#tree`).treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
-            toggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, false);
+            toggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, false, runFlag);
         }
         updateOnOffMaster(toggleButtons);
     });

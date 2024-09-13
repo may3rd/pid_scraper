@@ -68,10 +68,12 @@
 
     .zoom-menu-container {
       grid-area: zoom-menu-container;
+      height: fit-content;
     }
 
     .table-container {
       grid-area: table-container;
+      height: 100%;
     }
 
     .right-menu-container {
@@ -97,25 +99,27 @@
     <div id="grid-container" class="grid-container">
       <div class="canvas-container m-0" id="canvas-container">
         <canvas id="canvas" class="border shadow-sm mb-5 rounded"></canvas>
-        {% if image1 %}
+        {% if runFlag %}
         <img id="output-image" src="{{ url_for('static', path='images/prediction_visual.png') }}" alt=""
           class="hidden" />
+        <script>const imagePath = '{{ url_for('static', path = 'images/prediction_visual.png') }}'; const runFlag = true;</script>
         {% else %}
         <img id="output-image" src="{{ url_for('static', path='images/gcmethumb-3.png') }}" alt="" class="hidden" />
+        <script>const imagePath = `{{ url_for('static', path = 'images/gcmethumb-3.png') }}`; const runFlag = false;</script>
         {% endif %}
       </div>
       <div id="zoom-menu-container" class="zoom-menu-container">
         <div class="container text-center mt-1 mb-1">
-          <div class="row">
-            <div id="zoom-btn-container" class="col w-50 align-self-end h-auto">
+          <div class="row align-middle">
+            <div id="zoom-btn-container" class="col w-50 align-self-end h-100 d-inline-block">
               <button zoom-in id="zoom-in" class="btn btn-secondary" type="button" disabled><i class="fa fa-magnifying-glass-plus"></i></button>
               <button zoom-out id="zoom-out" class="btn btn-secondary " type="button" disabled><i class="fa fa-magnifying-glass-minus"></i></button>
               <button zoom-org id="zoom-one" class="btn btn-secondary " type="button" disabled>1:1</button>
               <button zoom-tofit id="zoom-to-fit" class="btn btn-secondary " type="button" disabled><i class="fa fa-left-right"></i></button>
               <button zoom-all id="zoom-all" class="btn btn-secondary " type="button" disabled><i class="fa fa-up-down-left-right"></i></button>
             </div>
-            <div class="col">
-              <div id="zoom-text" class="form-text small-font">Slide to zoom.</div><div id="position" class="form-text small-font"></div>
+            <div class="col d-inline-block">
+              <div id="zoom-text" class="form-text small-font">Slide to zoom.</div>
               <input id="zoom-range" class="form-range" type="range" min="0.1" max="5" step="0.1" value="1" disabled/>
             </div>
           </div>
@@ -136,12 +140,12 @@
           <tbody id="table-body">
             {% for item in table_data %}
             <tr>
-              <td class="text-center"><div class=""><button class="toggle-btn btn btn-sm btn-primary small tiny-font" data-status="on" data-index="{{ item.Index }}">On</button></div></td>
+              <td class="text-center"><div class=""><button class="toggle-btn btn btn-sm btn-primary small tiny-font btn-outline-light" data-status="on" data-index="{{ item.Index }}">On</button></div></td>
               <td class="item-index text-center">{{ item.Index }}</td>
               <td class="item-object">{{ item.Object }}</td>
               <td class="item-text">{{ item.Text }}</td>
               <td>{{ item.Score }}</td>
-              <td class="text-centor"><div class=""><button class="zoom-to-btn btn btn-sm btn-primary small tiny-font" data-index="{{ item.Index }}">Find</button></div></td>
+              <td class="text-centor"><div class=""><button class="zoom-to-btn btn btn-sm btn-primary small tiny-font btn-outline-light" data-index="{{ item.Index }}">Find</button></div></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -221,9 +225,9 @@
               <div class="text-body"><h5>Select by Category</h5></div>
               <div class="mb-1">
                 <button id="master-toggle" class="btn btn-primary btn-sm text-nowrap tiny-font" data-status="on">Hide all B Box</button>
-                <button id="select-all" class="btn btn-secondary disabled btn-sm text-nowrap tiny-font" data-status="on">Hightlight
+                <button id="select-all" class="btn btn-secondary btn-sm text-nowrap tiny-font" data-status="on">Hightlight
                   All</button>
-                <button id="deselect-all" class="btn btn-secondary disabled btn-sm text-nowrap tiny-font" data-status="on">Unhightlight All</button>
+                <button id="deselect-all" class="btn btn-secondary btn-sm text-nowrap tiny-font" data-status="on">Unhightlight All</button>
               </div>
               <div id="tree"></div>
             </div>
