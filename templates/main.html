@@ -115,8 +115,8 @@
               <button zoom-all id="zoom-all" class="btn btn-secondary " type="button" disabled><i class="fa fa-up-down-left-right"></i></button>
             </div>
             <div class="col">
-              <div id="zoom-text" class="form-text small-font">Slide to zoom.</div>
-              <input id="zoom-range" class="form-range" type="range" min="0.1" max="10" step="0.1" value="1" disabled/>
+              <div id="zoom-text" class="form-text small-font">Slide to zoom.</div><div id="position" class="form-text small-font"></div>
+              <input id="zoom-range" class="form-range" type="range" min="0.1" max="5" step="0.1" value="1" disabled/>
             </div>
           </div>
         </div>
@@ -130,6 +130,7 @@
               <th>Object Detected</th>
               <th>Text Detected</th>
               <th>Score</th>
+              <th class="zoom-to-column text-center tiny-font">Zoom To</th>
             </tr>
           </thead>
           <tbody id="table-body">
@@ -140,6 +141,7 @@
               <td class="item-object">{{ item.Object }}</td>
               <td class="item-text">{{ item.Text }}</td>
               <td>{{ item.Score }}</td>
+              <td class="text-centor"><div class=""><button class="zoom-to-btn btn btn-sm btn-primary small tiny-font" data-index="{{ item.Index }}">Find</button></div></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -156,27 +158,17 @@
               </div>
             </div>
             <div class="row align-items-top">
-              <div class="col-4">
+              <div class="col w-50">
                 <label for="conf-th" class="form-label mb-0">Confident Threshold</label>
                 <input id="conf-th" class="form-control form-control-sm" name="conf_th" type="text" placeholder=""
                   aria-label="example" value="0.80" />
                 <div id="" class="form-text">The confidential threshold for model detection.</div>
               </div>
-              <div class="col-4">
+              <div class="col w-50">
                 <label for="image-size" class="form-label mb-0">Segment Size</label>
                 <input id="image-size" class="form-control form-control-sm" name="image_size" type="text"
                   placeholder="640" aria-label="example" value="640" />
-                <div id="" class="form-text">The segment size of image, equal to imgsz in yolov8. 640 for default, 288
-                  for yolov8_300.</div>
-              </div>
-              <div class="col-4">
-                <label for="contourArea" class="form-label mb-0">Contour Area</label>
-                <input id="contourArea" class="form-control form-control-sm" name="contourArea" type="text"
-                  placeholder="15000" aria-label="example" />
-                <div id="" class="form-text">
-                  Parameter for text finding.<br />
-                  Line 2.
-                </div>
+                <div id="" class="form-text">The segment size of image, equal to imgsz in yolov8.<br>288 for yolov8_300.</div>
               </div>
             </div>
             <div class="row align-items-center mt-1">
@@ -213,7 +205,7 @@
               <div class="col mt-2">
                 <div class="form-check">
                   <input class="form-check-input" type="checkbox" value="True" id="text_OCR" name="text_OCR" />
-                  <label class="form-check-label" for="textOCR">Apply Text Recognition. (EasyOCR)</label>
+                  <label class="form-check-label" for="textOCR">Apply Text Recognition (EasyOCR)</label>
                 </div>
               </div>
             </div>
@@ -228,8 +220,10 @@
             <div class="row">
               <div class="text-body"><h5>Select by Category</h5></div>
               <div class="mb-1">
-                <button id="master-toggle" class="btn btn-primary btn-sm text-nowrap tiny-font" data-status="on">Hide all</button>
-                <button id="deselect-all" class="btn btn-secondary disabled btn-sm text-nowrap tiny-font" data-status="on">Deselect All</button>
+                <button id="master-toggle" class="btn btn-primary btn-sm text-nowrap tiny-font" data-status="on">Hide all B Box</button>
+                <button id="select-all" class="btn btn-secondary disabled btn-sm text-nowrap tiny-font" data-status="on">Hightlight
+                  All</button>
+                <button id="deselect-all" class="btn btn-secondary disabled btn-sm text-nowrap tiny-font" data-status="on">Unhightlight All</button>
               </div>
               <div id="tree"></div>
             </div>

@@ -161,7 +161,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-.DS_Store
 coremlmodels/
 *detected/
 datasets/*/
@@ -175,3 +174,5 @@ yolo_weights/
 # include
 !datasets/template/
 !datasets/yaml/
+.DS_Store
+datasets/.DS_Store

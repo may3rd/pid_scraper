@@ -222,11 +222,17 @@ async def inferencing_image_and_text(
     # Calculate the overlap ratio
     overlap_ratio = 0.2 #float(32 / image_size)
 
+    # Correct the image size
+    image_size = (int(math.ceil((image_size + 1) / 32))-1) * 32
+    #print(int(math.ceil((image_size + 1) / 32))-1)
+    #print(int(math.ceil((300 + 1) / 32))-1)
+
     # Set the IoU threshold for NMS during merging
     iou_threshold = 0.1
 
     # Run the inferencing model
     # use verbose = 2 to see predection time
+    print(f"Run the sliced prediction of {image_size}x{image_size} slices.")
     result = get_sliced_prediction(
         corrected_image,
         detection_model,
