@@ -5,7 +5,6 @@
 var imageHeight = 100;
 var imageWidth = 100;
 let leftMargin = 0;
-let topMargin = 0;
 
 const canvas = new fabric.Canvas(`canvas`, { backgroundColor: "#CFCECF" });
 canvas.selection = false; // disable group selection
@@ -80,9 +79,6 @@ const canvasUtils = {
         const minY = offsetHeight > 0 ? offsetHeight / 2 : offsetHeight;
         const maxY = offsetHeight > 0 ? offsetHeight / 2 : 0;
 
-        leftMargin = minX;
-        topMargin = minY;
-
         // Adjust left and top values to stay within the limits
         x = Math.max(Math.min(x, maxX), minX);
         y = Math.max(Math.min(y, maxY), minY);
@@ -99,8 +95,10 @@ const canvasUtils = {
             y = vpt[5];
         }
         const xy = canvasUtils.calculatePosition(x, y);
+
         vpt[4] = xy[0];
         vpt[5] = xy[1];
+        canvas.renderAll();
 
         document.getElementById(`position`).innerHTML = `(` + parseFloat(xy[0]).toFixed(0) + `,` + parseFloat(xy[1]).toFixed(0) + `)`;
      },
@@ -120,6 +118,26 @@ const canvasUtils = {
     },
 
     // adding image and bounding box from inference model to canves
+
+    onImageLoad: function (image) {
+        // image is finished loading
+        const imageSrc = $(image).attr(`src`);
+        let runFlag = false;
+
+        if (imageSrc.slice(-15) === `gcmethumb-3.png`) {
+            runFlag = false;
+            this.addItemsToCanvas(image, runFlag);
+        } else {
+            runFlag = true;
+            this.addItemsToCanvas(image, runFlag);
+            this.updateZoomButtons(canvas.getZoom(), runFlag);
+            const buttons = $(`div#zoom-btn-container button`);
+            buttons.prop(`disabled`, false);
+            $(`#zoom-range`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
+        }
+
+        return runFlag;
+    },
 
     addItemsToCanvas: function (image, runFlag) {
         // runFlag is True if model is run.
@@ -181,28 +199,6 @@ const canvasUtils = {
         }
         // reset zoom
         canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
-    },
-
-    // Event handlers
-
-    onImageLoad: function (image) {
-        // image is finished loading
-        const imageSrc = $(image).attr(`src`);
-        let runFlag = false;
-
-        if (imageSrc.slice(-15) === `gcmethumb-3.png`) {
-            runFlag = false;
-            this.addItemsToCanvas(image, runFlag);
-        } else {
-            runFlag = true;
-            this.addItemsToCanvas(image, runFlag);
-            this.updateZoomButtons(canvas.getZoom(), runFlag);
-            const buttons = $(`div#zoom-btn-container button`);
-            buttons.prop(`disabled`, false);
-            $(`#zoom-range`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-        }
-
-        return runFlag;
     },
 
     // Create overlay display when row is selected
@@ -577,7 +573,9 @@ $(document).ready(function () {
             toggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, true);
         }
         updateOnOffMaster(toggleButtons);
-    }).on(`nodeUnchecked`, function (event, data) {
+    });
+    
+    $(`#tree`).on(`nodeUnchecked`, function (event, data) {
         const children = data.nodes;
         if (children) {
             //console.log(data.nodes);
@@ -622,10 +620,10 @@ $(document).ready(function () {
             $btn.removeClass(`btn-primary`)
             $btn.addClass(`btn-secondary`)
         }
+        //
         updateTreeView(index, toggleButtons, treeNodes);
         canvasUtils.setBBoxOpacity(index, !currentStatus, runFlag);
         updateOnOffMaster(toggleButtons);
-        
         this.blur();
     });
 
@@ -639,52 +637,22 @@ $(document).ready(function () {
 
         const $btn = $(this);
         const index = Number($btn.data(`index`)) - 1;
-        // Toggle the status and update botton text
-        const image = canvas.item(0);
-        const group = canvas.item(1);
-        const box = group.item(index);
-        const left = box.left;
-        const top = box.top;
-        const width = box.width;
-        const height = box.height;
-
-        const container = $(`#canvas-container`);
-        const ctnWidth = container.width();
-        const ctnHeight = container.height();
-
         // Set zoom to actual size
+        canvasUtils.allZoom();
         canvasUtils.zoom(1.0, runFlag);
-
-        const imageLeft = image.left;
-        const imageTop = image.top;
-        const groupLeft = image.left;
-        const groupTop = image.top;
-        const boxLeft = groupLeft + box.left + (group.originalX === `center` ? group.width / 2 : 0);
-        const boxTop = groupTop + box.top + (group.originalY === `center` ? group.height / 2: 0)
-
-        const boxCenterX = groupLeft + boxLeft + box.width / 2;
-        const boxCenterY = groupTop + boxTop + box.height / 2;
-
-        const boxX = imageLeft + boxCenterX;
-        const boxY = imageTop + boxCenterY;
-
-        console.log(`x = `, groupLeft, box.left, box.width, imageLeft, imageWidth, ctnWidth, boxX);
-        console.log(`y = `, groupTop, box.top, box.height, imageTop, imageHeight, ctnHeight, boxY);
-
+        //
         const item = jsonData[index];
-        const left2 = item.Left - imageWidth / 2;
-        const top2 = item.Top - imageHeight / 2;
+        const left = item.Left;
+        const top = item.Top;
+        const width = item.Width;
+        const height = item.Height;
 
+        const x = $(`#canvas-container`).width() / 2 - (left + width / 2); //ctnWidth / 2 - boxX;
+        const y = $(`#canvas-container`).height() / 2 - (top + height / 2); //ctnHeight / 2 - boxY;
 
-        // Calculate the position to zoom to
-        const newX = - parseInt(ctnWidth / 2 - left2);
-        const newY = - parseInt(ctnHeight / 2 - top2);
-
-        console.log(newX, newY);
-        
-        canvas.zoomToPoint({ x: newX, y: newY }, 1);
-        canvasUtils.validateImagePosition();
+        canvasUtils.validateImagePosition(x, y);
         canvasUtils.updateZoomButtons(1, runFlag);
+        table.rows(index).select();
         this.blur();
     });
 
@@ -739,7 +707,7 @@ $(document).ready(function () {
     table
         .on(`select`, function (e, dt, type, indexes) {
             //let rowData = table.rows(indexes).data().toArray();
-            let selected_rows = table.rows(`.selected`)[0];
+            const selected_rows = table.rows(`.selected`)[0];
 
             canvasUtils.displayOverlay(selected_rows, runFlag);
             // update Deselect All button
@@ -748,7 +716,7 @@ $(document).ready(function () {
         })
         .on(`deselect`, function (e, dt, type, indexes) {
             //let rowData = table.rows(indexes).data().toArray();
-            let selected_rows = table.rows(`.selected`)[0];
+            const selected_rows = table.rows(`.selected`)[0];
 
             canvasUtils.displayOverlay(selected_rows, runFlag);
             // update Deselect All button
