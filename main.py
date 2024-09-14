@@ -153,7 +153,7 @@ async def main(request: Request):
     })
 
     return templates.TemplateResponse(
-        "main.html",
+        "index.html",
         {
             "request": request,
             "runFlag": False,
@@ -192,8 +192,8 @@ async def inferencing_image_and_text(
 
     # Convert input image array to CV2
     image = cv2.imdecode(input_image_array, cv2.IMREAD_COLOR)
-    corrected_image = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
-    # original_image = np.copy(image)
+    original_image = np.copy(image)
+    processed_image = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2RGB)
 
     # Create inferencing model
     print("start detecting by using", selected_model, "model with conf =", conf_th)
@@ -201,9 +201,10 @@ async def inferencing_image_and_text(
 
     # Set category_mapping for ONNX model, required by updated version of SAHI
     if "yolov8onnx" in selected_model:
-        import onnx, ast
-        m = onnx.load(weight_file)
-        props = { p.key: p.value for p in m.metadata_props }
+        import onnx
+        import ast
+        model = onnx.load(weight_file)
+        props = { p.key: p.value for p in model.metadata_props }
         names = ast.literal_eval(props['names'])
         category_mapping = { str(key): value for key, value in names.items() }
     else:
@@ -223,10 +224,8 @@ async def inferencing_image_and_text(
     # Calculate the overlap ratio
     overlap_ratio = 0.2 #float(32 / image_size)
 
-    # Correct the image size
-    image_size = (int(math.ceil((image_size + 1) / 32))-1) * 32
-    #print(int(math.ceil((image_size + 1) / 32))-1)
-    #print(int(math.ceil((300 + 1) / 32))-1)
+    # Correct the image size to use with the model
+    image_size = (int(math.ceil((image_size + 1) / 32)) - 1) * 32
 
     # Set the IoU threshold for NMS during merging
     iou_threshold = 0.1
@@ -235,16 +234,16 @@ async def inferencing_image_and_text(
     # use verbose = 2 to see predection time
     print(f"Run the sliced prediction of {image_size}x{image_size} slices.")
     result = get_sliced_prediction(
-        corrected_image,
+        processed_image,
         detection_model,
         slice_height=image_size,
         slice_width=image_size,
         overlap_height_ratio=overlap_ratio,
         overlap_width_ratio=overlap_ratio,
         verbose=2,
-        postprocess_type="NMS",
-        postprocess_match_metric="IOU",
-        postprocess_match_threshold=iou_threshold,
+        #postprocess_type="NMS",
+        #postprocess_match_metric="IOU",
+        #postprocess_match_threshold=iou_threshold,
     )
 
     # Extract the result from inferencing model
@@ -257,18 +256,20 @@ async def inferencing_image_and_text(
         file_name="prediction_visual",  # output file name
     )
 
-    cv2.imwrite('static/images/prediction_visual.png', image)
+    # Write the original image and the bounding boxes will be created by fabric.js
+    cv2.imwrite('static/images/prediction_visual.png', original_image)
 
+    # Obtain the prediction list from model results.
     object_prediction_list = result.object_prediction_list
 
-    # Crops bounding boxes over the source image and exports
-    crop_object_predictions(corrected_image, object_prediction_list, "croped object detected")
+    # Crops bounding boxes over the source image and exports to directory
+    crop_object_predictions(processed_image, object_prediction_list, "croped object detected")
 
     # Initialize data list and index
     table_data = []
     symbol_with_text = []
     category_ids = set()
-    category_names = set()
+    #category_names = set()
     index = 0
 
     # Get the prediction list from inferenced result
@@ -278,7 +279,6 @@ async def inferencing_image_and_text(
     print("Found", len(prediction_list), "objects.")
 
     category_object_count = [ 0 for i in range(len(list(detection_model.category_mapping.values())))]
-    #print(category_object_count)
 
     # Extarct bboxes from prediction result
     for prediction in prediction_list:
@@ -291,9 +291,8 @@ async def inferencing_image_and_text(
         object_category_id = prediction.category.id
         index += 1
 
-        #print(object_category_id, object_category)
         category_ids.add(object_category_id)
-        category_names.add(object_category)
+        #category_names.add(object_category)
 
         # save data to use in HTML canvas
         table_data.append({
@@ -307,7 +306,6 @@ async def inferencing_image_and_text(
             "Height": math.ceil(h),
             "Score": round(prediction.score.value, 3),
             "Text": f"number {str(category_object_count[object_category_id] + 1)}",
-            #"Text": f"class:object: ({object_category_id}:{str(category_object_count[object_category_id])}) (No text)",
         })
 
         category_object_count[object_category_id] = category_object_count[object_category_id] + 1
@@ -327,7 +325,6 @@ async def inferencing_image_and_text(
                 index = symbol_with_text[i]["Index"] - 1
                 txt_to_display = symbol_with_text[i]["Text"] + ", " + " ".join(text_list[i])
                 table_data[index]["Text"] = txt_to_display
-                #print(txt_to_display)
 
     # sort table_data by 'CategoryID' then 'ObjectID'
     sorted_data = sorted(table_data, key=lambda x: (x['CategoryID'], x['ObjectID']))
@@ -339,13 +336,12 @@ async def inferencing_image_and_text(
     json_data = json.dumps(sorted_data)
 
     # save category id and name for create checkbox table
-    checkboxes = []
     category_ids_list = list(category_ids)
     category_ids_list.sort()
     category_mapping = list(detection_model.category_mapping.values())
     category_id_found = [item["CategoryID"] for item in table_data]
-    #print(detection_model.category_mapping)
 
+    checkboxes = []
     for i in range(len(category_ids)):
         checkboxes.append({
             "id": category_ids_list[i],
@@ -354,7 +350,7 @@ async def inferencing_image_and_text(
         })
 
     return templates.TemplateResponse(
-        "main.html",
+        "index.html",
         {
             "request": request,
             "runFlag": True,

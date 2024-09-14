@@ -665,7 +665,7 @@ $(document).ready(function () {
             top: top + height / 2,
             originX: `center`,
             originY: `center`,
-            fill: `rgba(0,0,0,0)`,
+            fill: `rgba(255,0,0,0.8)`,
             stroke: `red`,
             strokeWidth: 3,
             width: width,
@@ -676,36 +676,7 @@ $(document).ready(function () {
         canvas.add(rect);
         canvas.renderAll();
         // Animate the red rectangle
-        const duration = 500;
-        const scaleX = 1.25;
-        const scaleY = 1.25;
-
-        rect.animate('scaleX', scaleX, {
-            onChange: canvas.renderAll.bind(canvas),
-            duration: duration,
-            easing: fabric.util.ease.easeInOutQuad,
-            onComplete: function() {
-                rect.animate('scaleX', 1, {
-                    onChange: canvas.renderAll.bind(canvas),
-                    duration: duration,
-                    easing: fabric.util.ease.easeInOutQuad,
-                });
-            }
-        });
-
-        rect.animate('scaleY', scaleY, {
-            onChange: canvas.renderAll.bind(canvas),
-            duration: duration,
-            easing: fabric.util.ease.easeInOutQuad,
-            onComplete: function() {
-                rect.animate('scaleY', 1, {
-                    onChange: canvas.renderAll.bind(canvas),
-                    duration: duration,
-                    easing: fabric.util.ease.easeInOutQuad,
-                    onComplete: blink,
-                });
-            }
-        });
+        blink()
 
         // Add blinking effect
         function blink() {
