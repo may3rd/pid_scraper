@@ -68,12 +68,10 @@
 
     .zoom-menu-container {
       grid-area: zoom-menu-container;
-      height: fit-content;
     }
 
     .table-container {
       grid-area: table-container;
-      height: 100%;
     }
 
     .right-menu-container {
@@ -145,7 +143,7 @@
               <td class="item-object">{{ item.Object }}</td>
               <td class="item-text">{{ item.Text }}</td>
               <td>{{ item.Score }}</td>
-              <td class="text-centor"><div class=""><button class="zoom-to-btn btn btn-sm btn-primary small tiny-font btn-outline-light" data-index="{{ item.Index }}">Find</button></div></td>
+              <td class="text-center"><div class=""><button class="zoom-to-btn btn btn-sm btn-primary small tiny-font btn-outline-light " data-selected="false" data-index="{{ item.Index }}">Find</button></div></td>
             </tr>
             {% endfor %}
           </tbody>

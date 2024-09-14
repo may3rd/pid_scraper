@@ -650,8 +650,80 @@ $(document).ready(function () {
 
         canvasUtils.validateImagePosition(x, y);
         canvasUtils.updateZoomButtons(1, runFlag);
-        table.rows(index).select();
         this.blur();
+        // Animate red box
+        // Create a red rectangle
+        const rect = new fabric.Rect({
+            left: left + width / 2,
+            top: top + height / 2,
+            originX: `center`,
+            originY: `center`,
+            fill: `rgba(0,0,0,0)`,
+            stroke: `red`,
+            strokeWidth: 3,
+            width: width,
+            height: height,
+            opacity: 1.0,
+        });
+
+        console.log(rect);
+        //console.log(canvas.getObjects().length);
+        canvas.add(rect);
+        //console.log(canvas.getObjects().length);
+        canvas.renderAll();
+        
+        const duration = 500;
+        const scaleX = 1.25;
+        const scaleY = 1.25;
+        rect.animate('scaleX', scaleX, {
+            onChange: canvas.renderAll.bind(canvas),
+            duration: duration,
+            easing: fabric.util.ease.easeInOutQuad,
+            onComplete: function() {
+                rect.animate('scaleX', 1, {
+                    onChange: canvas.renderAll.bind(canvas),
+                    duration: duration,
+                    easing: fabric.util.ease.easeInOutQuad,
+                });
+            }
+        });
+
+        rect.animate('scaleY', scaleY, {
+            onChange: canvas.renderAll.bind(canvas),
+            duration: duration,
+            easing: fabric.util.ease.easeInOutQuad,
+            onComplete: function() {
+                rect.animate('scaleY', 1, {
+                    onChange: canvas.renderAll.bind(canvas),
+                    duration: duration,
+                    easing: fabric.util.ease.easeInOutQuad,
+                    onComplete: blink,
+                });
+            }
+        });
+
+        // Add blinking effect
+        function blink() {
+            const objs = canvas.getObjects();
+            const rect = objs[objs.length - 1];
+            rect.animate('opacity', 0, {
+                onChange: canvas.renderAll.bind(canvas),
+                duration: 200,
+                onComplete: function() {
+                    rect.animate('opacity', 1, {
+                        onChange: canvas.renderAll.bind(canvas),
+                        duration: 200,
+                        onComplete: removeRect,
+                    });
+                }
+            });
+        }
+
+        function removeRect() {
+            const objs = canvas.getObjects();
+            const rect = objs[objs.length - 1];
+            canvas.remove(rect);
+        };
     });
 
     // Master toggle button functionality
@@ -721,6 +793,24 @@ $(document).ready(function () {
             updateDeselectAllButton(table);
             //console.log(`<b>` + type + ` <i>de</i>selection</b> - ` + JSON.stringify(rowData));
         });
+    
+    // Correct the height of the table on last page by adding empty rows
+    
+    table.on('draw', function () {
+        var info = table.page.info(),
+            rowsOnPage = info.end - info.start,
+            missingRowsOnPage = info.length - rowsOnPage;
+        
+        if (missingRowsOnPage > 0) {
+            for (var i = 0; i < missingRowsOnPage; i++) {
+                $(table.body()).append(buildEmptyRow(6));
+            }
+        }
+    });
+
+    function buildEmptyRow(columnsCount) {
+        return `<tr class="">` + Array(columnsCount + 1).join(`<td class""><div class=""><button class="btn btn-sm small tiny-font btn-outline-light"">&nbsp;</button></div></td>`) + `</tr>`;
+    }    
 
     // Get reference to select model_type
     const modelSelect = $(`select#selected_model`);
