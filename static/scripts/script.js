@@ -121,6 +121,32 @@ const canvasUtils = {
         this.updateZoomButtons(zoom, runFlag);
         canvas.calcOffset();
     },
+    
+    zoomAnimate: function (zoom, runFlag) {
+        const container = $(`#canvas-container`);
+        const width = container.width();
+        const height = container.height();
+        // Validate the zoom factor
+        zoom = Math.min(zoom, this.maxZoom());
+        zoom = Math.max(zoom, this.minZoom());
+
+        // Animate the zoom
+        fabric.util.animate({
+            startValue: canvas.getZoom(),
+            endValue: zoom,
+            duration: 300,
+            easing: fabric.util.ease.easeOutQuad,
+            onChange: (newZoomValue) => {
+                canvas.zoomToPoint({ x: width / 2, y: height / 2 }, newZoomValue);
+                this.validateImagePosition();
+                canvas.renderAll();
+            },
+            onComplete: () => {
+                this.updateZoomButtons(zoom, runFlag);
+                canvas.calcOffset();
+            }
+        });
+    },
 
     // adding image and bounding box from inference model to canves
 
@@ -369,7 +395,7 @@ $(document).ready(function () {
         var zoom = canvas.getZoom();
         //zoom *= 0.999 ** (-50);
         zoom += 0.1;
-        canvasUtils.zoom(zoom, runFlag);
+        canvasUtils.zoomAnimate(zoom, runFlag);
         this.blur();
     });
 
@@ -377,22 +403,22 @@ $(document).ready(function () {
         var zoom = canvas.getZoom();
         //zoom *= 0.999 ** (50);
         zoom -= 0.1;
-        canvasUtils.zoom(zoom, runFlag);
+        canvasUtils.zoomAnimate(zoom, runFlag);
         this.blur();
     });
 
     $(`#zoom-one`).on(`click`, function () {
-        canvasUtils.zoom(1.0, runFlag);
+        canvasUtils.zoomAnimate(1.0, runFlag);
         this.blur();
     });
 
     $(`#zoom-all`).on(`click`, function () {
-        canvasUtils.zoom(canvasUtils.allZoom(), runFlag);
+        canvasUtils.zoomAnimate(canvasUtils.allZoom(), runFlag);
         this.blur();
     });
 
     $(`#zoom-to-fit`).on(`click`, function () {
-        canvasUtils.zoom(canvasUtils.toFitZoom(), runFlag);
+        canvasUtils.zoomAnimate(canvasUtils.toFitZoom(), runFlag);
         this.blur();
     });
     
@@ -411,7 +437,7 @@ $(document).ready(function () {
         this.blur();
     });
 
-    // Event handler for canvas
+    // Event handler for canvas mouse events
 
     canvas.on(`mouse:wheel`, function (opt) {
         if (runFlag) {
