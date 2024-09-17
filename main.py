@@ -16,6 +16,7 @@ import json
 import math
 import glob
 import easyocr
+import os
 
 from pid_scraper import utils as utils
 
@@ -34,12 +35,11 @@ SYMBOL_WITH_TEXT = [
 ]
 
 
-def list_weight_files():
-    '''
-    List the trained weight files from paths
-    '''
+def list_weight_files(weight_paths: list=[r"yolo_weights/*.onnx", r"yolo_weights/*.pt"]) -> list:
+    """
+    Return the list of model in the `weight_paths` paths.
+    """
     weight_files = []
-    weight_paths = [r"yolo_weights/*.onnx", r"yolo_weights/*.pt"]
 
     for path in weight_paths:
         file_list = glob.glob(path)
@@ -50,7 +50,10 @@ def list_weight_files():
     return weight_files
 
 
-def list_config_files():
+def list_config_files() -> list:
+    """
+    Return the list of the yaml data for corresponding weight model.
+    """
     config_files = []
     file_list = glob.glob(r"datasets/yaml/*.yaml")
     file_list.sort()
@@ -63,9 +66,6 @@ def list_config_files():
 
 WEIGHT_FILE_LIST = list_weight_files()
 CONFIG_FILE_LIST = list_config_files()
-    
-# Create Reader for text OCR
-reader = easyocr.Reader(['en'])
 
 # image is cv2
 def extract_text_from_image(image, objects) -> list:
@@ -80,6 +80,9 @@ def extract_text_from_image(image, objects) -> list:
     if len(objects) < 1:
         return []
     
+    # Create Reader for text OCR
+    reader = easyocr.Reader(['en'])
+
     return_list = []
     
     # Loop through objects list
@@ -263,7 +266,22 @@ async def inferencing_image_and_text(
     object_prediction_list = result.object_prediction_list
 
     # Crops bounding boxes over the source image and exports to directory
-    crop_object_predictions(processed_image, object_prediction_list, "croped object detected")
+    # remove all files in croped object detected
+    cropped_object_path = f"croped object detected"
+
+    def delete_all_files_in_folder(folder_path):
+        # Get a list of all files in the folder
+        files = glob.glob(os.path.join(folder_path, "*"))
+
+        # Iterate over the list of files and remove each one
+        for file in files:
+            try:
+                os.remove(file)
+            except Exception as e:
+                print(f"Error deleting {file}: {e}")
+
+    delete_all_files_in_folder(cropped_object_path)
+    crop_object_predictions(processed_image, object_prediction_list, cropped_object_path)
 
     # Initialize data list and index
     table_data = []
