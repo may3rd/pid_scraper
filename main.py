@@ -9,7 +9,9 @@ from sahi import AutoDetectionModel
 from sahi.predict import get_sliced_prediction
 from sahi.utils.cv import crop_object_predictions
 
-from PIL import Image
+import onnxruntime as ort
+import torch
+
 import cv2
 import numpy as np
 import json
@@ -34,6 +36,9 @@ SYMBOL_WITH_TEXT = [
     "instrument tag", 
 ]
 
+
+def is_mps_available():
+    return torch.backends.mps.is_available()
 
 def list_weight_files(weight_paths: list=[r"yolo_weights/*.onnx", r"yolo_weights/*.pt"]) -> list:
     """
@@ -213,6 +218,22 @@ async def inferencing_image_and_text(
     else:
         category_mapping = None
 
+    # Create session options
+    sess_options = ort.SessionOptions()
+    providers = ['CPUExecutionProvider']  # Default to CPU
+
+    # Check if MPS is available and set the provider accordingly
+    if is_mps_available():
+        providers = ['CoreMLExecutionProvider']
+        device = 'mps'
+    else:
+        device = 'cpu'
+
+    # Create inference session
+    session = ort.InferenceSession(weight_file, sess_options, providers=providers)
+
+    print(f"The model will be run on {device}")
+    
     # Set up the model to be used for inferencing.
     # sahi.AutoDetectionModel
     detection_model = AutoDetectionModel.from_pretrained(
@@ -221,7 +242,7 @@ async def inferencing_image_and_text(
         config_path=config_file,
         confidence_threshold=conf_th,
         category_mapping=category_mapping,
-        device="cpu",
+        device=device,
     )
 
     # Calculate the overlap ratio
