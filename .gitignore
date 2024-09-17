@@ -176,3 +176,4 @@ yolo_weights/*
 !datasets/yaml/
 .DS_Store
 datasets/.DS_Store
+static/images/prediction_visual.png
