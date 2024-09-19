@@ -11,13 +11,13 @@ from sahi.utils.cv import crop_object_predictions
 
 import onnxruntime as ort
 import torch
+import easyocr
 
 import cv2
 import numpy as np
 import json
 import math
 import glob
-import easyocr
 import os
 
 from pid_scraper import utils as utils
@@ -30,11 +30,13 @@ MODEL_TYPES = [
 SYMBOL_WITH_TEXT = [ 
     "page connection", 
     "utility connection",
-    "instrument DCS",
-    "instrument-DCS",
+    "instrument dcs",
     "instrument logic",
     "instrument tag", 
+    "line number",
 ]
+
+VERTICAL_TEXT = ["page connection", "line number"]
 
 
 def is_mps_available():
@@ -99,11 +101,11 @@ def extract_text_from_image(image, objects) -> list:
             object["Top"] + object["Height"]
         )
 
-        cropped_img_name = f"output/cropped_image_{index}.png"
+        cropped_img_name = f"output/cropped_image_with_text_{index}.png"
         cropped_img = image[y_start:y_end, x_start:x_end]
 
         # rotate if object is page connection and dimension wide is less than height
-        if object["Object"] == "page connection":
+        if object["Object"] in VERTICAL_TEXT:
             (height, wide) = cropped_img.shape[:2]
 
             if height > wide:
@@ -277,7 +279,7 @@ async def inferencing_image_and_text(
         rect_th=2,
         hide_labels=True,
         hide_conf=True,
-        file_name="prediction_visual",  # output file name
+        file_name="prediction_results",  # output file name
     )
 
     # Write the original image and the bounding boxes will be created by fabric.js
@@ -362,7 +364,7 @@ async def inferencing_image_and_text(
         if len(text_list) > 0:
             for i in range(len(text_list)):
                 index = symbol_with_text[i]["Index"] - 1
-                txt_to_display = symbol_with_text[i]["Text"] + ", " + " ".join(text_list[i])
+                txt_to_display = " ".join(text_list[i])
                 table_data[index]["Text"] = txt_to_display
 
     # sort table_data by 'CategoryID' then 'ObjectID'

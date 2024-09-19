@@ -215,9 +215,9 @@ const canvasUtils = {
                 const box = new fabric.Rect({
                     left: item.Left,
                     top: item.Top,
-                    fill: `rgba(0,0,0,0)`,
+                    fill: `rgba(224,54,11,0.2)`,
                     stroke: hexColor[item.CategoryID % hexColor.length],
-                    strokeWidth: 3,
+                    strokeWidth: 0,
                     width: item.Width,
                     height: item.Height,
                     selectable: false,
