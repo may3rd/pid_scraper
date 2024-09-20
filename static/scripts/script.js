@@ -148,6 +148,65 @@ const canvasUtils = {
         });
     },
 
+    zoomToBBox: function (index, runFlag) {
+        // Set zoom to actual size (1:1)
+        this.allZoom();
+        this.zoom(1.0, runFlag);
+        // Determine the position of the b.box
+        const item = jsonData[index];
+        const left = item.Left;
+        const top = item.Top;
+        const width = item.Width;
+        const height = item.Height;
+        const x = $(`#canvas-container`).width() / 2 - (left + width / 2);
+        const y = $(`#canvas-container`).height() / 2 - (top + height / 2);
+        this.validateImagePosition(x, y);
+        this.updateZoomButtons(1, runFlag);
+
+        // Create an animate red box to show the location
+        // Create a red rectangle and add to the canvas
+        const rect = new fabric.Rect({
+            left: left + width / 2,
+            top: top + height / 2,
+            originX: `center`,
+            originY: `center`,
+            fill: `rgba(255,0,0,0.8)`,
+            stroke: `red`,
+            strokeWidth: 3,
+            width: width,
+            height: height,
+            opacity: 1.0,
+        });
+
+        canvas.add(rect);
+        canvas.renderAll();
+        // Animate the red rectangle
+        blink()
+
+        // Add blinking effect
+        function blink() {
+            const objs = canvas.getObjects();
+            const rect = objs[objs.length - 1];
+            rect.animate('opacity', 0, {
+                onChange: canvas.renderAll.bind(canvas),
+                duration: 200,
+                onComplete: function() {
+                    rect.animate('opacity', 1, {
+                        onChange: canvas.renderAll.bind(canvas),
+                        duration: 200,
+                        onComplete: removeRect,
+                    });
+                }
+            });
+        }
+        // Remove the animated red rectangle
+        function removeRect() {
+            const objs = canvas.getObjects();
+            const rect = objs[objs.length - 1];
+            canvas.remove(rect);
+        };  
+    },
+
     // adding image and bounding box from inference model to canves
 
     onImageLoad: function (image) {
@@ -216,7 +275,8 @@ const canvasUtils = {
                     left: item.Left,
                     top: item.Top,
                     fill: `rgba(224,54,11,0.2)`,
-                    stroke: hexColor[item.CategoryID % hexColor.length],
+                    //stroke: hexColor[item.CategoryID % hexColor.length],
+                    stroke: `red`,
                     strokeWidth: 0,
                     width: item.Width,
                     height: item.Height,
@@ -244,6 +304,14 @@ const canvasUtils = {
             const rect = objects[objects.length - 1];
             canvas.remove(rect);
         }
+        
+        const bbox = canvas.item(1);
+        console.log(bbox.size());
+        for (let i = 0; i < bbox.size(); i++) {
+            bbox.item(i).set(`strokeWidth`, 0);
+            bbox.item(i).set(`fill`, `rgba(224,54,11,0.2)`);
+        }
+//        group.item(index).set(`opacity`, opc);
 
         if (selectd_rows.length > 0) {
             // Create new rectangle to cover all image
@@ -261,6 +329,8 @@ const canvasUtils = {
 
             // create clipPaths from selected_rows
             selectd_rows.forEach((idx) => {
+                bbox.item(idx).set(`strokeWidth`, 1);
+                bbox.item(idx).set(`fill`, `rgba(224,54,11,0.0)`);
                 item = jsonData[idx];
                 const box = new fabric.Rect({
                     left: item.Left - imageWidth / 2,
@@ -622,6 +692,15 @@ $(document).ready(function () {
         updateOnOffMaster(toggleButtons);
     });
 
+    $(`#tree`).on(`nodeSelected`, function (event, data) {
+        // If there is children then select all children.
+        const children = data.nodes;
+        if (!children) {
+            index = Number(data.tags[0]) - 1;
+            canvasUtils.zoomToBBox(index, runFlag);
+        }
+    });
+
     let toggleButtons = [];
 
     table.rows().every(function () {
@@ -661,71 +740,15 @@ $(document).ready(function () {
 
     table.on(`click`, `.zoom-to-btn`, function (event) {
         event.stopPropagation(); // Prevent row selection
+        this.blur();
+        
         // If no run then do nothing
         if (!runFlag) {
-            this.blur();
             return;
         };
         // Find the bbox that corresponding to clicked button
-        const $btn = $(this);
-        const index = Number($btn.data(`index`)) - 1;
-        // Set zoom to actual size (1:1)
-        canvasUtils.allZoom();
-        canvasUtils.zoom(1.0, runFlag);
-        // Determine the position of the b.box
-        const item = jsonData[index];
-        const left = item.Left;
-        const top = item.Top;
-        const width = item.Width;
-        const height = item.Height;
-        const x = $(`#canvas-container`).width() / 2 - (left + width / 2);
-        const y = $(`#canvas-container`).height() / 2 - (top + height / 2);
-        canvasUtils.validateImagePosition(x, y);
-        canvasUtils.updateZoomButtons(1, runFlag);
-        this.blur();
-
-        // Create an animate red box to show the location
-        // Create a red rectangle and add to the canvas
-        const rect = new fabric.Rect({
-            left: left + width / 2,
-            top: top + height / 2,
-            originX: `center`,
-            originY: `center`,
-            fill: `rgba(255,0,0,0.8)`,
-            stroke: `red`,
-            strokeWidth: 3,
-            width: width,
-            height: height,
-            opacity: 1.0,
-        });
-
-        canvas.add(rect);
-        canvas.renderAll();
-        // Animate the red rectangle
-        blink()
-
-        // Add blinking effect
-        function blink() {
-            const objs = canvas.getObjects();
-            const rect = objs[objs.length - 1];
-            rect.animate('opacity', 0, {
-                onChange: canvas.renderAll.bind(canvas),
-                duration: 200,
-                onComplete: function() {
-                    rect.animate('opacity', 1, {
-                        onChange: canvas.renderAll.bind(canvas),
-                        duration: 200,
-                        onComplete: removeRect,
-                    });
-                }
-            });
-        }
-        // Remove the animated red rectangle
-        function removeRect() {
-            const objs = canvas.getObjects();
-            const rect = objs[objs.length - 1];
-            canvas.remove(rect);
-        };
+        const index = Number($(this).data(`index`)) - 1;
+        canvasUtils.zoomToBBox(index, runFlag);
     });
 
     // Master toggle button functionality

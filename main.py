@@ -38,23 +38,28 @@ SYMBOL_WITH_TEXT = [
 
 VERTICAL_TEXT = ["page connection", "line number"]
 
+OUTPUT_PATH = "output"
+CROPPED_OBJECT_PATH = os.path.join(OUTPUT_PATH, "cropped object detected")
+TEXT_PATH = os.path.join(OUTPUT_PATH, "text found")
+MODEL_PATH = "yolo_weights"
 
 def is_mps_available():
     return torch.backends.mps.is_available()
 
-def list_weight_files(weight_paths: list=[r"yolo_weights/*.onnx", r"yolo_weights/*.pt"]) -> list:
+def list_model_files(model_paths: list=[os.path.join(MODEL_PATH, "*.onnx"),
+                                           os.path.join(MODEL_PATH, "*.pt")]) -> list:
     """
-    Return the list of model in the `weight_paths` paths.
+    Return the list of model in the `model_paths` paths.
     """
-    weight_files = []
+    model_files = []
 
-    for path in weight_paths:
+    for path in model_paths:
         file_list = glob.glob(path)
         file_list.sort()
         for item in file_list:
-            weight_files.append({"item": item})
+            model_files.append({"item": item})
 
-    return weight_files
+    return model_files
 
 
 def list_config_files() -> list:
@@ -71,14 +76,15 @@ def list_config_files() -> list:
     return config_files
 
 
-WEIGHT_FILE_LIST = list_weight_files()
+MODEL_LIST = list_model_files()
 CONFIG_FILE_LIST = list_config_files()
 
-# image is cv2
+
 def extract_text_from_image(image, objects) -> list:
     '''
-    extract_text_from_image:
-    param: image
+    extract text from image using easyOCR
+    
+    param: image (cv2 image)
     param: objects
     
     return: list of read text
@@ -101,7 +107,7 @@ def extract_text_from_image(image, objects) -> list:
             object["Top"] + object["Height"]
         )
 
-        cropped_img_name = f"output/cropped_image_with_text_{index}.png"
+        cropped_img_name = os.path.join(TEXT_PATH, "cropped_image_with_text_{index}.png")
         cropped_img = image[y_start:y_end, x_start:x_end]
 
         # rotate if object is page connection and dimension wide is less than height
@@ -169,7 +175,7 @@ async def main(request: Request):
             "runFlag": False,
             "table_data": table_data,
             "json_data": json_data,
-            "weight_files": WEIGHT_FILE_LIST,
+            "model_files": MODEL_LIST,
             "config_files": CONFIG_FILE_LIST,
             "model_types": MODEL_TYPES,
             "input_filename": "Not run yet!",
@@ -186,7 +192,7 @@ async def inferencing_image_and_text(
         request: Request,
         file_input: UploadFile = File(...),
         selected_model: str = Form("yolov8"),
-        weight_file: str = Form("yolo_weights/yolov8_640_20231022.pt"),
+        model_file: str = Form(os.path.join(MODEL_PATH, "yolov8_640_20231022.pt")),
         config_file: str = Form("datasets/yaml/data.yaml"),
         conf_th: float = Form(0.8),
         image_size: int = Form(640),
@@ -207,13 +213,13 @@ async def inferencing_image_and_text(
 
     # Create inferencing model
     print("start detecting by using", selected_model, "model with conf =", conf_th)
-    print("model_path is", weight_file)
+    print("model_path is", model_file)
 
     # Set category_mapping for ONNX model, required by updated version of SAHI
     if "yolov8onnx" in selected_model:
         import onnx
         import ast
-        model = onnx.load(weight_file)
+        model = onnx.load(model_file)
         props = { p.key: p.value for p in model.metadata_props }
         names = ast.literal_eval(props['names'])
         category_mapping = { str(key): value for key, value in names.items() }
@@ -232,7 +238,7 @@ async def inferencing_image_and_text(
         device = 'cpu'
 
     # Create inference session
-    session = ort.InferenceSession(weight_file, sess_options, providers=providers)
+    session = ort.InferenceSession(model_file, sess_options, providers=providers)
 
     print(f"The model will be run on {device}")
     
@@ -240,7 +246,7 @@ async def inferencing_image_and_text(
     # sahi.AutoDetectionModel
     detection_model = AutoDetectionModel.from_pretrained(
         model_type=selected_model,
-        model_path=weight_file,
+        model_path=model_file,
         config_path=config_file,
         confidence_threshold=conf_th,
         category_mapping=category_mapping,
@@ -289,8 +295,6 @@ async def inferencing_image_and_text(
     object_prediction_list = result.object_prediction_list
 
     # Crops bounding boxes over the source image and exports to directory
-    # remove all files in croped object detected
-    cropped_object_path = f"croped object detected"
 
     def delete_all_files_in_folder(folder_path):
         # Get a list of all files in the folder
@@ -303,8 +307,8 @@ async def inferencing_image_and_text(
             except Exception as e:
                 print(f"Error deleting {file}: {e}")
 
-    delete_all_files_in_folder(cropped_object_path)
-    crop_object_predictions(processed_image, object_prediction_list, cropped_object_path)
+    delete_all_files_in_folder(CROPPED_OBJECT_PATH)
+    crop_object_predictions(processed_image, object_prediction_list, CROPPED_OBJECT_PATH)
 
     # Initialize data list and index
     table_data = []
@@ -359,12 +363,15 @@ async def inferencing_image_and_text(
     if text_OCR:
         # Extract the text from prediciton
         print("Found", len(symbol_with_text), "object to be text.")
+        delete_all_files_in_folder(TEXT_PATH)
+
         text_list = extract_text_from_image(image, symbol_with_text)
 
         if len(text_list) > 0:
             for i in range(len(text_list)):
                 index = symbol_with_text[i]["Index"] - 1
                 txt_to_display = " ".join(text_list[i])
+                print(txt_to_display)
                 table_data[index]["Text"] = txt_to_display
 
     # sort table_data by 'CategoryID' then 'ObjectID'
@@ -397,7 +404,7 @@ async def inferencing_image_and_text(
             "runFlag": True,
             "table_data": sorted_data,
             "json_data": json_data,
-            "weight_files": WEIGHT_FILE_LIST,
+            "model_files": MODEL_LIST,
             "config_files": CONFIG_FILE_LIST,
             "model_types": MODEL_TYPES,
             "input_filename": input_filename,

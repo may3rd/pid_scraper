@@ -185,9 +185,9 @@
             </div>
             <div id="weight-path-container" class="row align-items-center mt-1">
               <div class="col">
-                <label for="weight_file" class="form-label mb-0">Weight file : </label>
-                <select id="weight_file" class="form-select form-select-sm" name="weight_file">
-                  {% for item in weight_files %}
+                <label for="model_file" class="form-label mb-0">Weight file : </label>
+                <select id="model_file" class="form-select form-select-sm" name="model_file">
+                  {% for item in model_files %}
                   <option value="{{ item.item }}">{{ item.item }}</option>
                   {% endfor %}
                 </select>
