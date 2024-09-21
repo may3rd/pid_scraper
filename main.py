@@ -47,20 +47,22 @@ MODEL_PATH = "yolo_weights"
 def is_mps_available():
     return torch.backends.mps.is_available()
 
-def list_model_files(model_paths: list=[os.path.join(MODEL_PATH, "*.onnx"),
-                                           os.path.join(MODEL_PATH, "*.pt")]) -> list:
+def list_weight_files(model_paths=None) -> list:
     """
     Return the list of model in the `model_paths` paths.
     """
-    model_files = []
+    if model_paths is None:
+        model_paths = [os.path.join(MODEL_PATH, "*.onnx"),
+                       os.path.join(MODEL_PATH, "*.pt")]
+    weight_files = []
 
     for path in model_paths:
         file_list = glob.glob(path)
         file_list.sort()
         for item in file_list:
-            model_files.append({"item": item})
+            weight_files.append({"item": item})
 
-    return model_files
+    return weight_files
 
 
 def list_config_files() -> list:
@@ -77,7 +79,7 @@ def list_config_files() -> list:
     return config_files
 
 
-MODEL_LIST = list_model_files()
+MODEL_LIST = list_weight_files()
 CONFIG_FILE_LIST = list_config_files()
 
 
@@ -156,7 +158,7 @@ templates = Jinja2Templates(directory="templates")
 async def main(request: Request):
     # Create dummy table
     table_data = []
-    count = 15;
+    count = 15
 
     for idx in range(count):
         table_data.append({
@@ -170,12 +172,11 @@ async def main(request: Request):
         
     # Create JSON data to return to template
     json_data = json.dumps(table_data)
-    checkboxes = []
-    checkboxes.append({
+    check_boxes = [{
         "id": 0,
-        "desc": "Object to be detcted",
+        "desc": "Object to be detected",
         "count": count,
-    })
+    }]
 
     return templates.TemplateResponse(
         "index.html",
@@ -184,11 +185,11 @@ async def main(request: Request):
             "runFlag": False,
             "table_data": table_data,
             "json_data": json_data,
-            "model_files": MODEL_LIST,
+            "weight_files": MODEL_LIST,
             "config_files": CONFIG_FILE_LIST,
             "model_types": MODEL_TYPES,
             "input_filename": "Not run yet!",
-            "category_id": checkboxes,
+            "category_id": check_boxes,
         }
     )
 
@@ -201,11 +202,11 @@ async def inferencing_image_and_text(
         request: Request,
         file_input: UploadFile = File(...),
         selected_model: str = Form("yolov8"),
-        model_file: str = Form(os.path.join(MODEL_PATH, "yolov8_640_20231022.pt")),
+        weight_file: str = Form(os.path.join(MODEL_PATH, "yolov8_640_20231022.pt")),
         config_file: str = Form("datasets/yaml/data.yaml"),
         conf_th: float = Form(0.8),
         image_size: int = Form(640),
-        text_OCR: bool = Form(False),
+        text_ocr: bool = Form(False),
 ):
     print("Input file name:", file_input.filename)
     input_filename = file_input.filename
@@ -222,13 +223,13 @@ async def inferencing_image_and_text(
 
     # Create inferencing model
     print("start detecting by using", selected_model, "model with conf =", conf_th)
-    print("model_path is", model_file)
+    print("model_path is", weight_file)
 
     # Set category_mapping for ONNX model, required by updated version of SAHI
     if "yolov8onnx" == selected_model:
         import onnx
         import ast
-        model = onnx.load(model_file)
+        model = onnx.load(weight_file)
         props = { p.key: p.value for p in model.metadata_props }
         names = ast.literal_eval(props['names'])
         category_mapping = { str(key): value for key, value in names.items() }
@@ -252,7 +253,7 @@ async def inferencing_image_and_text(
     # sahi.AutoDetectionModel
     detection_model = AutoDetectionModel.from_pretrained(
         model_type=selected_model,
-        model_path=model_file,
+        model_path=weight_file,
         config_path=config_file,
         confidence_threshold=conf_th,
         category_mapping=category_mapping,
@@ -269,7 +270,7 @@ async def inferencing_image_and_text(
     iou_threshold = 0.1
 
     # Run the inferencing model
-    # use verbose = 2 to see predection time
+    # use verbose = 2 to see prediction time
     print(f"Run the sliced prediction of {image_size}x{image_size} slices.")
     result = get_sliced_prediction(
         processed_image,
@@ -366,7 +367,7 @@ async def inferencing_image_and_text(
             symbol_with_text.append(table_data[-1])
             table_data[-1]["Text"] = table_data[-1]["Text"] + " OCR OFF"
     
-    if text_OCR:
+    if text_ocr:
         # Extract the text from prediciton
         print("Found", len(symbol_with_text), "object to be text.")
         delete_all_files_in_folder(TEXT_PATH)
@@ -395,9 +396,9 @@ async def inferencing_image_and_text(
     category_mapping = list(detection_model.category_mapping.values())
     category_id_found = [item["CategoryID"] for item in table_data]
 
-    checkboxes = []
+    check_boxes = []
     for i in range(len(category_ids)):
-        checkboxes.append({
+        check_boxes.append({
             "id": category_ids_list[i],
             "desc": category_mapping[category_ids_list[i]],
             "count": category_id_found.count(category_ids_list[i]),
@@ -410,11 +411,11 @@ async def inferencing_image_and_text(
             "runFlag": True,
             "table_data": sorted_data,
             "json_data": json_data,
-            "model_files": MODEL_LIST,
+            "weight_files": MODEL_LIST,
             "config_files": CONFIG_FILE_LIST,
             "model_types": MODEL_TYPES,
             "input_filename": input_filename,
-            "category_id": checkboxes,
+            "category_id": check_boxes,
         }
     )
 

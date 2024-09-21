@@ -12,7 +12,7 @@ const masterOnOffButtonTxt = [`Hide All B.Box`, `Show All B.Box`];
 var imageHeight = 100;
 var imageWidth = 100;
 
-// Utlities for canvas displaying
+// Utilities for canvas displaying
 // Combined together for easily call
 
 const canvasUtils = {
@@ -35,7 +35,7 @@ const canvasUtils = {
         return Math.max(width / imageWidth, height / imageHeight);
     },
 
-    // Update Zooom Buttons based on current zoom factor
+    // Update Zoom Buttons based on current zoom factor
 
     updateZoomButtons: function (zoom, runFlag) {
         if (runFlag) {
@@ -72,7 +72,7 @@ const canvasUtils = {
         }
     },
 
-    // Calculate and fix (x,y) position to esure that the image is inside canvas
+    // Calculate and fix (x,y) position to ensure that the image is inside canvas
 
     calculatePosition: (x, y) => {
         // Calculate the maximum allowed values
@@ -214,7 +214,7 @@ const canvasUtils = {
         };  
     },
 
-    // adding image and bounding box from inference model to canves
+    // adding image and bounding box from inference model to canvas
 
     onImageLoad: function (image, runFlag) {
         // image is finished loading
@@ -268,7 +268,7 @@ const canvasUtils = {
         let boxes = []
 
         canvasImg.set(`selectable`, false);
-        // save image width and hight
+        // save image width and height
         imageWidth = canvasImg.width;
         imageHeight = canvasImg.height;
 
@@ -298,10 +298,10 @@ const canvasUtils = {
         canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
     },
 
-    // Create overlay display around bouning box of the selected rows.
+    // Create overlay display around bounding box of the selected rows.
 
-    displayOverlay: function (selectd_rows, runFlag = false) {
-        // Check if it arlready has mask layer.
+    displayOverlay: function (selected_rows, runFlag = false) {
+        // Check if it already has mask layer.
         // If yes then remove it first.
         const objects = canvas.getObjects();
         const fixLayersCount = runFlag ? 2 : 1;
@@ -318,7 +318,7 @@ const canvasUtils = {
             bbox.item(i).set(`fill`, `rgba(224,54,11,0.2)`);
         }
 
-        if (selectd_rows.length > 0) {
+        if (selected_rows.length > 0) {
             // Create new rectangle to cover all image
             const rect = new fabric.Rect({
                 left: 0,
@@ -333,7 +333,7 @@ const canvasUtils = {
             var clipPaths = [];
 
             // create clipPaths from selected_rows
-            selectd_rows.forEach((idx) => {
+            selected_rows.forEach((idx) => {
                 bbox.item(idx).set(`strokeWidth`, 1);
                 bbox.item(idx).set(`fill`, `rgba(224,54,11,0.0)`);
                 item = jsonData[idx];
@@ -726,7 +726,7 @@ $(document).ready(function () {
         const $btn = $(this);
         const currentStatus = $btn.data(`status`) === `on`;
         const index = Number($btn.data(`index`)) - 1;
-        // Toggle the status and update botton text
+        // Toggle the status and update button text
         if (!currentStatus) {
             $btn.data(`status`, `on`);
             $btn.text(`On`);
@@ -888,11 +888,12 @@ $(document).ready(function () {
             effect: `win8_linear`,
             text: `Please wait...`,
         });
-        // sumbit form to FastAPI
+        // submit form to FastAPI
         $(`#main-form`).submit();
     });
 
-    $(`#main-form`).onsubmit = async (event) => {
+    //$(`#main-form`).onsubmit = async (event) => {
+    $(`#main-form`).on(`submit`, async function (event) {
         let res = await fetch(`/submit`, {
             method: `POST`,
             body: new FormData($(`#main-form`)),
@@ -907,7 +908,7 @@ $(document).ready(function () {
         } else {
             document.innerHTML = `Response error:`, res.status;
         }
-    };
+    });
     //
     // Event handling when image is loaded
     //
@@ -943,7 +944,7 @@ $(document).ready(function () {
         let zoomStage = canvas.getZoom() === canvasUtils.allZoom() ? 0 : -1;
         zoomStage = canvas.getZoom() === canvasUtils.toFitZoom() ? 1 : zoomStage;
 
-        // Set the hegiht of the grid container
+        // Set the height of the grid container
         gridContainer.height(containerHeight);
         // Save the height difference for the future adjustments
         if (!savedHeight) {
@@ -952,7 +953,7 @@ $(document).ready(function () {
         if (!savedWidth) {
             savedWidth = gridContainer.width() - canvasContainer.width();
         }
-        // Adjust the canvas container hegiht based on teh save height difference
+        // Adjust the canvas container height based on teh save height difference
         const canvasHeight = containerHeight - savedHeight - 30;
         const canvasWidth = gridContainer.width() - savedWidth;
 
