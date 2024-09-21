@@ -2,6 +2,7 @@
 // Start JQuery code
 // -----------------------------------------------------------------------------
 
+// new canvas with gray background
 const canvas = new fabric.Canvas(`canvas`, { backgroundColor: "#CFCECF" });
 canvas.selection = false; // disable group selection
 
@@ -12,9 +13,11 @@ var imageHeight = 100;
 var imageWidth = 100;
 
 // Utlities for canvas displaying
+// Combined together for easily call
 
 const canvasUtils = {
-    // Zooms factors
+    // Zoom factors
+
     maxZoom: function () { return 5.0; },
     minZoom: function () {
         const container = $(`#canvas-container`);
@@ -85,7 +88,7 @@ const canvasUtils = {
         x = Math.max(Math.min(x, maxX), minX);
         y = Math.max(Math.min(y, maxY), minY);
         
-        var xy = [x, y];
+        const xy = [x, y];
 
         return xy;
     },
@@ -95,6 +98,7 @@ const canvasUtils = {
     
     validateImagePosition: function (x, y) {
         const vpt = canvas.viewportTransform;
+
         if (!x) {
             x = vpt[4];
             y = vpt[5];
@@ -103,11 +107,12 @@ const canvasUtils = {
 
         vpt[4] = xy[0];
         vpt[5] = xy[1];
+
         canvas.calcOffset();
         canvas.renderAll();
     },
     
-    // Zoom the image to zoom factor
+    // Zoom the image to zoom factor, and center of the image
     
     zoom: function (zoom, runFlag) {
         const container = $(`#canvas-container`);
@@ -119,8 +124,9 @@ const canvasUtils = {
         canvas.zoomToPoint({ x: width / 2, y: height / 2 }, zoom);
         this.validateImagePosition();
         this.updateZoomButtons(zoom, runFlag);
-        canvas.calcOffset();
     },
+
+    // Zoom with animation
     
     zoomAnimate: function (zoom, runFlag) {
         const container = $(`#canvas-container`);
@@ -139,18 +145,18 @@ const canvasUtils = {
             onChange: (newZoomValue) => {
                 canvas.zoomToPoint({ x: width / 2, y: height / 2 }, newZoomValue);
                 this.validateImagePosition();
-                canvas.renderAll();
             },
             onComplete: () => {
                 this.updateZoomButtons(zoom, runFlag);
-                canvas.calcOffset();
             }
         });
     },
 
+    // Zoom to the position of the bounding box
+
     zoomToBBox: function (index, runFlag) {
         // Set zoom to actual size (1:1)
-        this.allZoom();
+        //this.allZoom();
         this.zoom(1.0, runFlag);
         // Determine the position of the b.box
         const item = jsonData[index];
@@ -160,6 +166,7 @@ const canvasUtils = {
         const height = item.Height;
         const x = $(`#canvas-container`).width() / 2 - (left + width / 2);
         const y = $(`#canvas-container`).height() / 2 - (top + height / 2);
+        // move the zoom to the center of the bounding box
         this.validateImagePosition(x, y);
         this.updateZoomButtons(1, runFlag);
 
@@ -209,17 +216,16 @@ const canvasUtils = {
 
     // adding image and bounding box from inference model to canves
 
-    onImageLoad: function (image) {
+    onImageLoad: function (image, runFlag) {
         // image is finished loading
         const imageSrc = $(image).attr(`src`);
-        let runFlag = false;
 
         if (imageSrc.slice(-15) === `gcmethumb-3.png`) {
             runFlag = false;
-            this.addItemsToCanvas(image);
+            this.addItemsToCanvas(image, runFlag);
         } else {
             runFlag = true;
-            this.addItemsToCanvas(image);
+            this.addItemsToCanvas(image, runFlag);
             this.updateZoomButtons(canvas.getZoom());
             const buttons = $(`div#zoom-btn-container button`);
             buttons.prop(`disabled`, false);
@@ -231,7 +237,7 @@ const canvasUtils = {
 
     // Adding the bounding boxes to the canvas
 
-    addItemsToCanvas: function (image) {
+    addItemsToCanvas: function (image, runFlag) {
         // runFlag is True if model is run.
         // runFlag is False when the fresh start.
         const hexColor = [
@@ -274,7 +280,7 @@ const canvasUtils = {
                 const box = new fabric.Rect({
                     left: item.Left,
                     top: item.Top,
-                    fill: `rgba(224,54,11,0.2)`,
+                    fill: `rgba(255,128,0,0.2)`,
                     //stroke: hexColor[item.CategoryID % hexColor.length],
                     stroke: `red`,
                     strokeWidth: 0,
@@ -306,12 +312,11 @@ const canvasUtils = {
         }
         
         const bbox = canvas.item(1);
-        console.log(bbox.size());
+        // 
         for (let i = 0; i < bbox.size(); i++) {
             bbox.item(i).set(`strokeWidth`, 0);
             bbox.item(i).set(`fill`, `rgba(224,54,11,0.2)`);
         }
-//        group.item(index).set(`opacity`, opc);
 
         if (selectd_rows.length > 0) {
             // Create new rectangle to cover all image
@@ -357,7 +362,9 @@ const canvasUtils = {
     // Set the opacity of the bounding box when On/Off toggle button clicked
 
     setBBoxOpacity(index, flag, runFlag) {
-        if (!runFlag) { return };
+        if (!runFlag) {
+            return
+        };
         const group = canvas.item(1);
         const opc = flag ? 1 : 0;
         group.item(index).set(`opacity`, opc);
@@ -457,7 +464,7 @@ function updateDeselectAllButton(table) {
 // run this when all page is ready.
 
 $(document).ready(function () {
-    let runFlag = false;
+    let runFlag = false; // flag to check the run status
 
     // Set action for zoom buttons
 
@@ -528,8 +535,8 @@ $(document).ready(function () {
     canvas.on(`mouse:down`, function (opt) {
         const evt = opt.e;
         if (evt.altKey === true) {
-            this.selection = true;
             this.isDragging = false;
+            this.selection = true;
             this.lastPosX = evt.clientX;
             this.lastPosY = evt.clientY;
         } else {
@@ -544,7 +551,9 @@ $(document).ready(function () {
         if (this.isDragging) {
             const evt = opt.e;
             const vpt = this.viewportTransform;
-            canvasUtils.validateImagePosition(vpt[4] + evt.clientX - this.lastPosX, vpt[5] + evt.clientY - this.lastPosY);
+            const newX = vpt[4] + evt.clientX - this.lastPosX;
+            const newY = vpt[5] + evt.clientY - this.lastPosY;
+            canvasUtils.validateImagePosition(newX, newY);
             this.requestRenderAll();
             this.lastPosX = evt.clientX;
             this.lastPosY = evt.clientY;
@@ -833,30 +842,20 @@ $(document).ready(function () {
 
     function buildEmptyRow(columnsCount) {
         return `<tr class="">` + Array(columnsCount + 1).join(`<td class""><div class=""><button class="btn btn-sm small tiny-font btn-outline-light"">&nbsp;</button></div></td>`) + `</tr>`;
-    }    
+    }
 
-    // Get reference to select model_type
-    const modelSelect = $(`select#selected_model`);
-    const weightContainer = $(`div#weight-path-container`);
-    const configContainer = $(`div#config-path-container`);
-    const textOCRContainer = $(`div#textOCR-container`);
+    // hide file menu button
 
-    // hide and unhide form depends on selected model_type
-
-    modelSelect.on(`change`, function () {
-        const selectedValue = $(this).val();
-        // Enable all dependent select
-        if (selectedValue == `yolov8`) {
-            weightContainer.slideDown();
-            configContainer.slideDown();
-            //textOCRContainer.slideUp();
-        } else if (selectedValue == `easyocr`) {
-            weightContainer.slideUp();
-            configContainer.slideUp();
-            //textOCRContainer.slideDown();
+    $(`#toggle-file-menu`).on(`click`, function () {
+        if ($(this).data(`status`) === `show`) {
+            $(`div#select-file-menu`).slideUp();
+            $(this).data(`status`, `hide`);
+        } else {
+            $(`div#select-file-menu`).slideDown();
+            $(this).data(`status`, `show`);
         }
     });
-
+    
     // handler for file change
 
     const fileInput = $(`#file-input`);
@@ -918,12 +917,12 @@ $(document).ready(function () {
         .each(function () {
             if (this.complete) {
                 // image is finished loading
-                runFlag =  canvasUtils.onImageLoad(this);
+                runFlag =  canvasUtils.onImageLoad(this, runFlag);
             }
         })
         .on(`load`, function () {
             // image is finished loading
-            runFlag = canvasUtils.onImageLoad(this);
+            runFlag = canvasUtils.onImageLoad(this, runFlag);
         });
     //
     // Auto adjust grid container height when window change size
@@ -954,7 +953,7 @@ $(document).ready(function () {
             savedWidth = gridContainer.width() - canvasContainer.width();
         }
         // Adjust the canvas container hegiht based on teh save height difference
-        const canvasHeight = containerHeight - savedHeight;
+        const canvasHeight = containerHeight - savedHeight - 30;
         const canvasWidth = gridContainer.width() - savedWidth;
 
         canvasContainer.height(canvasHeight);
@@ -988,5 +987,13 @@ $(document).ready(function () {
 
     for (let i = 0; i < toggleButtons.length; i++) {
         updateTreeView(i, toggleButtons, treeNodes)
+    }
+
+    // if runFlag is True then hide select file menu
+    if (runFlag) {
+        $(`#toggle-file-menu`).data(`status`, `hide`);
+        $(`div#select-file-menu`).hide();
+    } else {
+        $(`div#category-treeview`).hide();
     }
 });

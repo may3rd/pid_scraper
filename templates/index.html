@@ -47,13 +47,14 @@
 
     .grid-container {
       display: grid;
-      grid-template-columns: 1fr 425px;
+      grid-template-columns: 1fr 400px;
       /* Two columns with 1:2 ratio */
-      grid-template-rows: 1fr 70px auto;
+      grid-template-rows: 1fr 80px auto;
       /* Two rows with automatic height */
       gap: 5px;
       /* Gap between grid items */
       /* Set a fixed height for the grid */
+      hegiht: 100vh;
       position: relative;
 
       grid-template-areas:
@@ -76,6 +77,8 @@
 
     .right-menu-container {
       grid-area: right-menu-container;
+      overflow-y: auto;
+      max-height: 100vh;
     }
 
     .hidden {
@@ -96,6 +99,7 @@
   <div id="main-container" class="container-fluid m-0 p-0">
     <div id="grid-container" class="grid-container">
       <div class="canvas-container m-0" id="canvas-container">
+        <div id="last-run-filename" class="lead text-center small-font">{{ input_filename }}</div>
         <canvas id="canvas" class="border shadow-sm mb-5 rounded"></canvas>
         {% if runFlag %}
         <img id="output-image" src="{{ url_for('static', path='images/prediction_visual.png') }}" alt=""
@@ -123,7 +127,7 @@
           </div>
         </div>
       </div>
-      <div id="table-container" class="table-container small-font mb-2">
+      <div id="table-container" class="table-container small-font mb-2 hidden">
         <table id="output-table" class="display compact" width="100%">
           <thead class="tabel-dark">
             <tr>
@@ -151,77 +155,81 @@
       </div>
       <div class="right-menu-container small-font">
         <div class="container">
-          <form id="main-form" action="/submit" enctype="multipart/form-data" method="post">
-            <div class="row align-items-start mb-2">
-              <div class="col">
-                <label for="file-input" class="form-label mb-0">P&ID input</label>
-                <input id="file-input" class="form-control form-control-sm" name="file_input" type="file" />
-                <div id="" class="form-text">Last run: {{ input_filename }}</div>
-              </div>
-            </div>
-            <div class="row align-items-top">
-              <div class="col w-50">
-                <label for="conf-th" class="form-label mb-0">Confident Threshold</label>
-                <input id="conf-th" class="form-control form-control-sm" name="conf_th" type="text" placeholder=""
-                  aria-label="example" value="0.80" />
-                <div id="" class="form-text">The confidential threshold for model detection.</div>
-              </div>
-              <div class="col w-50">
-                <label for="image-size" class="form-label mb-0">Segment Size</label>
-                <input id="image-size" class="form-control form-control-sm" name="image_size" type="text"
-                  placeholder="640" aria-label="example" value="640" />
-                <div id="" class="form-text">The segment size of image, equal to imgsz in yolov8.<br>288 for yolov8_300.</div>
-              </div>
-            </div>
-            <div class="row align-items-center mt-1">
-              <div class="col">
-                <label for="selected_model" class="form-label mb-0">Model type : </label>
-                <select id="selected_model" class="form-select form-select-sm" name="selected_model">
-                  {% for item in model_types %}
-                  <option value="{{ item.value }}">{{ item.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div id="weight-path-container" class="row align-items-center mt-1">
-              <div class="col">
-                <label for="model_file" class="form-label mb-0">Weight file : </label>
-                <select id="model_file" class="form-select form-select-sm" name="model_file">
-                  {% for item in model_files %}
-                  <option value="{{ item.item }}">{{ item.item }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div id="config-path-container" class="row align-items-center mt-1">
-              <div class="col">
-                <label for="config_file" class="form-label mb-0">Config file : </label>
-                <select id="config_file" class="form-select form-select-sm" name="config_file">
-                  {% for item in config_files %}
-                  <option value="{{ item.item }}">{{ item.item }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-            </div>
-            <div id="textOCR-container" class="row">
-              <div class="col mt-2">
-                <div class="form-check">
-                  <input class="form-check-input" type="checkbox" value="True" id="text_OCR" name="text_OCR" />
-                  <label class="form-check-label" for="textOCR">Apply Text Recognition (EasyOCR)</label>
+          <div class="text-end">
+            <button id="toggle-file-menu" class="btn btn-primary btn-sm text-nowrap tiny-font" data-status="show"><i class="fa fa-bars" aria-hidden="true"></i></button>
+          </div>
+          <div id="select-file-menu" class="border p-1">
+            <form id="main-form" action="/submit" enctype="multipart/form-data" method="post">
+              <div class="row align-items-start mb-2">
+                <div class="col">
+                  <label for="file-input" class="form-label mb-0">P&ID input</label>
+                  <input id="file-input" class="form-control form-control-sm" name="file_input" type="file" />
                 </div>
               </div>
-            </div>
-            <div class="row">
-              <div class="col">
-                <button id="submit" class="btn btn-secondary btn-sm mb-3 mt-2" type="submit"
-                  disabled>Submit</button>
+              <div class="row align-items-top">
+                <div class="col w-50">
+                  <label for="conf-th" class="form-label mb-0">Confident Threshold</label>
+                  <input id="conf-th" class="form-control form-control-sm" name="conf_th" type="text" placeholder=""
+                    aria-label="example" value="0.80" />
+                  <div id="" class="form-text">The confidential threshold for model detection.</div>
+                </div>
+                <div class="col w-50">
+                  <label for="image-size" class="form-label mb-0">Segment Size</label>
+                  <input id="image-size" class="form-control form-control-sm" name="image_size" type="text"
+                    placeholder="640" aria-label="example" value="640" />
+                  <div id="" class="form-text">The segment size of image, equal to imgsz in yolov8.<br>288 for yolov8_300.</div>
+                </div>
               </div>
-            </div>
-          </form>
-          <div class="row align-items-start mb-2">
+              <div class="row align-items-center mt-1">
+                <div class="col">
+                  <label for="selected_model" class="form-label mb-0">Model type : </label>
+                  <select id="selected_model" class="form-select form-select-sm" name="selected_model">
+                    {% for item in model_types %}
+                    <option value="{{ item.value }}">{{ item.name }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div id="weight-path-container" class="row align-items-center mt-1">
+                <div class="col">
+                  <label for="model_file" class="form-label mb-0">Weight file : </label>
+                  <select id="model_file" class="form-select form-select-sm" name="model_file">
+                    {% for item in model_files %}
+                    <option value="{{ item.item }}">{{ item.item }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div id="config-path-container" class="row align-items-center mt-1">
+                <div class="col">
+                  <label for="config_file" class="form-label mb-0">Config file : </label>
+                  <select id="config_file" class="form-select form-select-sm" name="config_file">
+                    {% for item in config_files %}
+                    <option value="{{ item.item }}">{{ item.item }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+              <div id="textOCR-container" class="row">
+                <div class="col mt-2">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="True" id="text_OCR" name="text_OCR" />
+                    <label class="form-check-label" for="textOCR">Apply Text Recognition (EasyOCR)</label>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col">
+                  <button id="submit" class="btn btn-secondary btn-sm mb-3 mt-2" type="submit"
+                    disabled>Submit</button>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div id="category-treeview" class="row align-items-start mb-2">
             <div class="row">
               <div class="text-body"><h5>Select by Category</h5></div>
-              <div class="mb-1">
+              <div class="mb-1 hidden">
                 <button id="master-toggle" class="btn btn-primary btn-sm text-nowrap tiny-font" data-status="on">Hide all B Box</button>
                 <button id="select-all" class="btn btn-secondary btn-sm text-nowrap tiny-font" data-status="on">Hightlight
                   All</button>

@@ -25,7 +25,8 @@ from pid_scraper import utils as utils
 # Define the model type for inferencing
 MODEL_TYPES = [
     {"name": 'yolov8onnx', "value": 'yolov8onnx'},
-    {"name": 'yolov8', "value": 'yolov8'},]
+    {"name": 'yolov8', "value": 'yolov8'},
+    ]
 
 SYMBOL_WITH_TEXT = [ 
     "page connection", 
@@ -34,7 +35,7 @@ SYMBOL_WITH_TEXT = [
     "instrument logic",
     "instrument tag", 
     "line number",
-]
+    ]
 
 VERTICAL_TEXT = ["page connection", "line number"]
 
@@ -119,7 +120,15 @@ def extract_text_from_image(image, objects) -> list:
 
         # remove circle from instrument tag
         if "instrument" in object["Object"]:
-            cropped_img = utils.remove_circular_lines(cropped_img, param1=50, param2=80, minRadius=30 ,maxRadius=100, thickness=3, outside=False)
+            cropped_img = utils.remove_circular_lines(
+                cropped_img, 
+                param1=50,
+                param2=80, 
+                minRadius=30,
+                maxRadius=100, 
+                thickness=3, 
+                outside=False,
+                )
 
         # save a processed cropped image
         cv2.imwrite(cropped_img_name, cropped_img)
@@ -216,7 +225,7 @@ async def inferencing_image_and_text(
     print("model_path is", model_file)
 
     # Set category_mapping for ONNX model, required by updated version of SAHI
-    if "yolov8onnx" in selected_model:
+    if "yolov8onnx" == selected_model:
         import onnx
         import ast
         model = onnx.load(model_file)
@@ -236,9 +245,6 @@ async def inferencing_image_and_text(
         device = 'mps'
     else:
         device = 'cpu'
-
-    # Create inference session
-    session = ort.InferenceSession(model_file, sess_options, providers=providers)
 
     print(f"The model will be run on {device}")
     
