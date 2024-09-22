@@ -35,7 +35,7 @@ const canvasUtils = {
         return Math.max(width / imageWidth, height / imageHeight);
     },
 
-    // Update Zooom Buttons based on current zoom factor
+    // Update Zoom Buttons based on current zoom factor
 
     updateZoomButtons: function (zoom, runFlag) {
         if (runFlag) {
@@ -214,7 +214,7 @@ const canvasUtils = {
         };  
     },
 
-    // adding image and bounding box from inference model to canves
+    // adding image and bounding box from inference model to canvas
 
     onImageLoad: function (image, runFlag) {
         // image is finished loading
@@ -268,7 +268,7 @@ const canvasUtils = {
         let boxes = []
 
         canvasImg.set(`selectable`, false);
-        // save image width and hight
+        // save image width and height
         imageWidth = canvasImg.width;
         imageHeight = canvasImg.height;
 
@@ -298,7 +298,7 @@ const canvasUtils = {
         canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
     },
 
-    // Create overlay display around bouning box of the selected rows.
+    // Create overlay display around bounding box of the selected rows.
 
     displayOverlay: function (selectd_rows, runFlag = false) {
         // Check if it arlready has mask layer.
@@ -726,7 +726,7 @@ $(document).ready(function () {
         const $btn = $(this);
         const currentStatus = $btn.data(`status`) === `on`;
         const index = Number($btn.data(`index`)) - 1;
-        // Toggle the status and update botton text
+        // Toggle the status and update button text
         if (!currentStatus) {
             $btn.data(`status`, `on`);
             $btn.text(`On`);
@@ -888,11 +888,11 @@ $(document).ready(function () {
             effect: `win8_linear`,
             text: `Please wait...`,
         });
-        // sumbit form to FastAPI
+        // submit form to FastAPI
         $(`#main-form`).submit();
     });
 
-    $(`#main-form`).onsubmit = async (event) => {
+    $(`#main-form`).on(`submit`,async function(event) {
         let res = await fetch(`/submit`, {
             method: `POST`,
             body: new FormData($(`#main-form`)),
@@ -907,7 +907,7 @@ $(document).ready(function () {
         } else {
             document.innerHTML = `Response error:`, res.status;
         }
-    };
+    });
     //
     // Event handling when image is loaded
     //
@@ -953,7 +953,7 @@ $(document).ready(function () {
             savedWidth = gridContainer.width() - canvasContainer.width();
         }
         // Adjust the canvas container hegiht based on teh save height difference
-        const canvasHeight = containerHeight - savedHeight - 30;
+        const canvasHeight = containerHeight - savedHeight - 25;
         const canvasWidth = gridContainer.width() - savedWidth;
 
         canvasContainer.height(canvasHeight);

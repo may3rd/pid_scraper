@@ -249,7 +249,6 @@ async def inferencing_image_and_text(
     print(f"The model will be run on {device}")
     
     # Set up the model to be used for inferencing.
-    # sahi.AutoDetectionModel
     detection_model = AutoDetectionModel.from_pretrained(
         model_type=selected_model,
         model_path=model_file,
