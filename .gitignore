@@ -161,20 +161,17 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 
-coremlmodels/
-*detected/*
 datasets/*/
-output/*
+output/
+PTTEP/
 runs/
 sahi/
 test/
-yolo_weights/*
+yolo_weights/
+*/.DS_Store
+static/images/prediction_results.png
+static/images/prediction_visual.png
 
 # include
 !datasets/template/
 !datasets/yaml/
-.DS_Store
-datasets/.DS_Store
-*/.DS_Store
-static/images/prediction_results.png
-!static/images/prediction_visual.png

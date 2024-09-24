@@ -606,7 +606,8 @@ $(document).ready(function () {
 
             child_nodes[categoryId].nodes.push({
                 tags: [jsonData[j].Index.toString()],
-                text: jsonData[j].Object + `, ` + jsonData[j].Text,
+                //text: jsonData[j].Object + `, ` + jsonData[j].Text,
+                text: jsonData[j].Text,
                 state: { checked: false, },
             });
         }
@@ -856,6 +857,17 @@ $(document).ready(function () {
         }
     });
     
+    $(`#hide-table-btn`).on(`click`, function () {
+        if ($(this).data(`status`) === `show`) {
+            $(`div#table-container`).hide();
+            $(this).data(`status`, `hide`);
+        } else {
+            $(`div#table-container`).show();
+            $(this).data(`status`, `show`);
+        }
+        adjustGridContainerHeight();
+    });
+    
     // handler for file change
 
     const fileInput = $(`#file-input`);
@@ -892,7 +904,7 @@ $(document).ready(function () {
         $(`#main-form`).submit();
     });
 
-    $(`#main-form`).on(`submit`,async function(event) {
+    $(`#main-form`).on(`submit`, async function (event) {
         let res = await fetch(`/submit`, {
             method: `POST`,
             body: new FormData($(`#main-form`)),
@@ -917,7 +929,7 @@ $(document).ready(function () {
         .each(function () {
             if (this.complete) {
                 // image is finished loading
-                runFlag =  canvasUtils.onImageLoad(this, runFlag);
+                runFlag = canvasUtils.onImageLoad(this, runFlag);
             }
         })
         .on(`load`, function () {
@@ -953,7 +965,8 @@ $(document).ready(function () {
             savedWidth = gridContainer.width() - canvasContainer.width();
         }
         // Adjust the canvas container hegiht based on teh save height difference
-        const canvasHeight = containerHeight - savedHeight - 25;
+        const tableOffset = $(`#hide-table-btn`).data(`status`) === `show` ? $(`div#table-container`).height() + 15 : 0;
+        const canvasHeight = containerHeight - savedHeight - 30 - tableOffset;
         const canvasWidth = gridContainer.width() - savedWidth;
 
         canvasContainer.height(canvasHeight);
@@ -971,6 +984,7 @@ $(document).ready(function () {
                 canvasUtils.zoom(canvasUtils.toFitZoom(), runFlag);
                 break;
             default:
+                canvasUtils.zoom(canvasUtils.allZoom(), runFlag);
                 canvasUtils.validateImagePosition();
                 break;
         }
@@ -978,9 +992,6 @@ $(document).ready(function () {
 
     // Attach the resize event listener
     $(window).on(`resize`, adjustGridContainerHeight);
-
-    // Call the function initially
-    adjustGridContainerHeight();
 
     canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
     updateDeselectAllButton(table);
@@ -992,8 +1003,16 @@ $(document).ready(function () {
     // if runFlag is True then hide select file menu
     if (runFlag) {
         $(`#toggle-file-menu`).data(`status`, `hide`);
+        $(`#hide-table-btn`).data(`status`, `hide`); 
         $(`div#select-file-menu`).hide();
+        $(`div#table-container`).hide();
     } else {
+        $(`#hide-table-btn`).data(`status`, `hide`); 
+        $(`#hide-table-btn`).hide();
         $(`div#category-treeview`).hide();
+        $(`div#table-container`).hide();
     }
+
+    // Call the function initially
+    adjustGridContainerHeight();
 });

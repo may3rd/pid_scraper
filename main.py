@@ -355,7 +355,7 @@ async def inferencing_image_and_text(
             "Width": math.ceil(w),
             "Height": math.ceil(h),
             "Score": round(prediction.score.value, 3),
-            "Text": f"number {str(category_object_count[object_category_id] + 1)}",
+            "Text": f"no. {str(category_object_count[object_category_id] + 1)}",
         })
 
         category_object_count[object_category_id] = category_object_count[object_category_id] + 1
@@ -363,10 +363,11 @@ async def inferencing_image_and_text(
         # Add current object to symbol with text list
         if object_category in SYMBOL_WITH_TEXT:
             symbol_with_text.append(table_data[-1])
-            table_data[-1]["Text"] = table_data[-1]["Text"] + " OCR OFF"
+            table_data[-1]["Text"] = table_data[-1]["Text"] + "(OCR OFF)"
     
     if text_OCR:
         # Extract the text from prediciton
+        input_filename = input_filename + f": {len(symbol_with_text)} objects with text."
         print("Found", len(symbol_with_text), "object to be text.")
         delete_all_files_in_folder(TEXT_PATH)
 
