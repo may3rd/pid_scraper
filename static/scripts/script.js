@@ -2,22 +2,21 @@
 // Start JQuery code
 // -----------------------------------------------------------------------------
 
-// new canvas with gray background
-const canvas = new fabric.Canvas(`canvas`, { backgroundColor: "#CFCECF" });
-canvas.selection = false; // disable group selection
+// Create a new canvas with gray background and disable group selection
+const canvas = new fabric.Canvas('canvas', { backgroundColor: '#CFCECF' });
+canvas.selection = false;
 
-// Master const
-const masterOnOffButtonTxt = [`Hide All B.Box`, `Show All B.Box`];
+// Master button text states
+const masterOnOffButtonTxt = ['Hide All B.Box', 'Show All B.Box'];
 
-var imageHeight = 100;
-var imageWidth = 100;
+// Image dimensions (assumed constant for simplicity)
+const imageHeight = 100;
+const imageWidth = 100;
 
-// Utlities for canvas displaying
-// Combined together for easily call
+// Utility functions for canvas displaying
 
 const canvasUtils = {
-    // Zoom factors
-
+    // Zoom factors and zoom buttons
     maxZoom: function () { return 5.0; },
     minZoom: function () {
         const container = $(`#canvas-container`);
@@ -38,37 +37,45 @@ const canvasUtils = {
     // Update Zoom Buttons based on current zoom factor
 
     updateZoomButtons: function (zoom, runFlag) {
-        if (runFlag) {
-            const minZoom = canvasUtils.minZoom();
-            const maxZoom = canvasUtils.maxZoom();
-            
-            // enable all zoom buttons
-            $(`#zoom-in`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-out`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-one`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            $(`#zoom-to-fit`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-            
-            if (zoom === minZoom) {
-                // disable zoom out and reset button
-                $(`#zoom-out`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
-                $(`#zoom-all`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
-            } else if (zoom === maxZoom) {
-                // disable zoom in button
-                $(`#zoom-in`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
-            } else if (zoom === 1.0) {
-                // enable all zoom buttons
-                $(`#zoom-one`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
-            } else if (zoom === this.toFitZoom()) {
-                $(`#zoom-to-fit`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+        if (!runFlag) return; // Early return if runFlag is false
+
+        const minZoom = canvasUtils.minZoom();
+        const maxZoom = canvasUtils.maxZoom();
+        
+        // Enable all zoom buttons
+        const zoomButtons = [`#zoom-in`, `#zoom-out`, `#zoom-one`, `#zoom-all`, `#zoom-to-fit`];
+        zoomButtons.forEach((selector) => {
+            $(selector).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
+        });
+
+        // Disable buttons based on current zoom
+        if (zoom === minZoom) {
+            $(`#zoom-out`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+            $(`#zoom-all`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+        } else if (zoom === maxZoom) {
+            $(`#zoom-in`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+        } else if (zoom === 1.0) {
+            $(`#zoom-one`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+        } else if (zoom === this.toFitZoom()) {
+            $(`#zoom-to-fit`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
+        }
+
+        // Update zoom-range input and zoom-text with error handling
+        try {
+            const zoomRangeInput = document.getElementById(`zoom-range`);
+            if (zoomRangeInput) { // Check if element exists
+                zoomRangeInput.min = minZoom;
+                zoomRangeInput.max = maxZoom;
+                zoomRangeInput.step = (maxZoom - minZoom) / 1000;
+                zoomRangeInput.value = zoom;
             }
-            // Update the zoom-range input by the current value.
-            document.getElementById(`zoom-range`).min = minZoom;
-            document.getElementById(`zoom-range`).max = maxZoom;
-            document.getElementById(`zoom-range`).step = (maxZoom - minZoom) / 1000;
-            document.getElementById(`zoom-range`).value = zoom;
-            // Update the zoom-text to show the current zoom level, by F0.2 format
-            document.getElementById(`zoom-text`).innerHTML = parseFloat(zoom * 100).toFixed(2) + `%`;
+
+            const zoomText = document.getElementById(`zoom-text`);
+            if (zoomText) { // Check if element exists
+                zoomText.innerHTML = parseFloat(zoom * 100).toFixed(2) + `%`;
+            }
+        } catch (error) {
+            console.error('Error updating zoom input or text:', error);
         }
     },
 
@@ -76,8 +83,9 @@ const canvasUtils = {
 
     calculatePosition: (x, y) => {
         // Calculate the maximum allowed values
-        const offsetWidth = canvas.width - imageWidth * canvas.getZoom();
-        const offsetHeight = canvas.height - imageHeight * canvas.getZoom();
+        const zoom = canvas.getZoom();
+        const offsetWidth = canvas.width - imageWidth * zoom;
+        const offsetHeight = canvas.height - imageHeight * zoom;
 
         const minX = offsetWidth > 0 ? offsetWidth /2 : offsetWidth;
         const maxX = offsetWidth > 0 ? offsetWidth / 2 : 0;
@@ -88,9 +96,7 @@ const canvasUtils = {
         x = Math.max(Math.min(x, maxX), minX);
         y = Math.max(Math.min(y, maxY), minY);
         
-        const xy = [x, y];
-
-        return xy;
+        return [x, y];
     },
 
     // Ensure that the current position or new, (x, y) position of left top of
@@ -99,14 +105,20 @@ const canvasUtils = {
     validateImagePosition: function (x, y) {
         const vpt = canvas.viewportTransform;
 
-        if (!x) {
+        // Default to current position if x or y is not provided
+        if (typeof x !== 'number' || typeof y !== 'number') {
             x = vpt[4];
             y = vpt[5];
         }
-        const xy = canvasUtils.calculatePosition(x, y);
 
+        // Calculate the new position within canvas bounds
+        const xy = canvasUtils.calculatePosition(x, y);
+        
+        // Update viewport transform
         vpt[4] = xy[0];
         vpt[5] = xy[1];
+
+        // Validate canvas instance before calling methods
 
         canvas.calcOffset();
         canvas.renderAll();
@@ -214,55 +226,9 @@ const canvasUtils = {
         };  
     },
 
-    // adding image and bounding box from inference model to canvas
-
-    onImageLoad: function (image, runFlag) {
-        // image is finished loading
-        const imageSrc = $(image).attr(`src`);
-
-        if (imageSrc.slice(-15) === `gcmethumb-3.png`) {
-            runFlag = false;
-            this.addItemsToCanvas(image, runFlag);
-        } else {
-            runFlag = true;
-            this.addItemsToCanvas(image, runFlag);
-            this.updateZoomButtons(canvas.getZoom());
-            const buttons = $(`div#zoom-btn-container button`);
-            buttons.prop(`disabled`, false);
-            $(`#zoom-range`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-        }
-        canvas.calcOffset();
-        return runFlag;
-    },
-
     // Adding the bounding boxes to the canvas
 
     addItemsToCanvas: function (image, runFlag) {
-        // runFlag is True if model is run.
-        // runFlag is False when the fresh start.
-        const hexColor = [
-            `#FF3838`,
-            `#2C99A8`,
-            `#FF701F`,
-            `#6473FF`,
-            `#CFD231`,
-            `#48F90A`,
-            `#92CC17`,
-            `#3DDB86`,
-            `#1A9334`,
-            `#00D4BB`,
-            `#FF9D97`,
-            `#00C2FF`,
-            `#344593`,
-            `#FFB21D`,
-            `#0018EC`,
-            `#8438FF`,
-            `#520085`,
-            `#CB38FF`,
-            `#FF95C8`,
-            `#FF37C7`
-        ];
-
         // get image to be added in canvas
         const canvasImg = new fabric.Image(image);
         let boxes = []
@@ -275,6 +241,28 @@ const canvasUtils = {
         canvas.add(canvasImg);
         
         if (runFlag) {
+            const hexColor = [
+                `#FF3838`,
+                `#2C99A8`,
+                `#FF701F`,
+                `#6473FF`,
+                `#CFD231`,
+                `#48F90A`,
+                `#92CC17`,
+                `#3DDB86`,
+                `#1A9334`,
+                `#00D4BB`,
+                `#FF9D97`,
+                `#00C2FF`,
+                `#344593`,
+                `#FFB21D`,
+                `#0018EC`,
+                `#8438FF`,
+                `#520085`,
+                `#CB38FF`,
+                `#FF95C8`,
+                `#FF37C7`
+            ];
             // for each item in jsonData => create bbox and add it to canvas
             jsonData.forEach((item) => {
                 const box = new fabric.Rect({
@@ -296,11 +284,12 @@ const canvasUtils = {
         }
         // reset zoom
         canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
+        canvas.calcOffset();
     },
 
     // Create overlay display around bounding box of the selected rows.
 
-    displayOverlay: function (selectd_rows, runFlag = false) {
+    displayOverlay: function (selectd_rows, runFlag) {
         // Check if it arlready has mask layer.
         // If yes then remove it first.
         const objects = canvas.getObjects();
@@ -312,12 +301,13 @@ const canvasUtils = {
         }
         
         const bbox = canvas.item(1);
-        // 
+        // Reset the bounding box to original state
         for (let i = 0; i < bbox.size(); i++) {
             bbox.item(i).set(`strokeWidth`, 0);
             bbox.item(i).set(`fill`, `rgba(224,54,11,0.2)`);
         }
 
+        // Create new rectangle to cover all image
         if (selectd_rows.length > 0) {
             // Create new rectangle to cover all image
             const rect = new fabric.Rect({
@@ -361,111 +351,130 @@ const canvasUtils = {
 
     // Set the opacity of the bounding box when On/Off toggle button clicked
 
-    setBBoxOpacity(index, flag, runFlag) {
-        if (!runFlag) {
-            return
-        };
+setBBoxOpacity(index, flag, runFlag) {
+    if (runFlag) {
         const group = canvas.item(1);
+        
+        // Error handling: Check if the group and the index are valid
+        if (!group || index < 0 || index >= group.size()) {
+            console.error('Invalid index or group item is not available.');
+            return;
+        }
+
         const opc = flag ? 1 : 0;
         group.item(index).set(`opacity`, opc);
         canvas.renderAll();
-    },
+    }
+}
+
 };
 
 // Update the tree view checkbox
 
 function updateTreeView(index, toggleButtons, treeNodes) {
-    const $btn = toggleButtons[index];
-    const status = $btn.data(`status`) === `on` ? true : false;
-    const node = treeNodes[index];
-    
-    if (status === true) {
-        $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
-    } else {
-        $(`#tree`).treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
+    if (index < 0 || index >= toggleButtons.length || index >= treeNodes.length) {
+        console.error('Invalid index provided to updateTreeView.');
+        return;
     }
 
-    const parent = $(`#tree`).treeview(`getParent`, node.nodeId);
-    // check the treeview for parent nodes
-    let siblings = $(`#tree`).treeview(`getSiblings`, node.nodeId);
-    let checked_count = 0;
+    const $btn = toggleButtons[index];
+    const status = $btn.data(`status`) === `on`;
+    const node = treeNodes[index];
+
+    const tree = $(`#tree`);
+    if (status) {
+        tree.treeview(`checkNode`, [node.nodeId, { silent: true }]);
+    } else {
+        tree.treeview(`uncheckNode`, [node.nodeId, { silent: true }]);
+    }
+
+    const parent = tree.treeview(`getParent`, node.nodeId);
+    let siblings = tree.treeview(`getSiblings`, node.nodeId);
     siblings.push(node);
 
-    for (let i = 0; i < siblings.length; i++) {
-        if (siblings[i].state[`checked`]) {
-            checked_count++;
-        }
-    }
+    const checked_count = siblings.filter(function (node) {
+        return node.state[`checked`];
+    }).length;
 
     if (checked_count === siblings.length) {
-        $(`#tree`).treeview(`checkNode`, [parent.nodeId, { silent: true }]);
+        tree.treeview(`checkNode`, [parent.nodeId, { silent: true }]);
     } else {
-        $(`#tree`).treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
+        tree.treeview(`uncheckNode`, [parent.nodeId, { silent: true }]);
     }
 }
 
 // Update the master toggle On/Off button
-
 function updateOnOffMaster(buttons) {
-    let isOneOff = false
-    for (let i = 0; i < buttons.length; i++) {
-        const $btn = buttons[i];
-        if ($btn.data(`status`) === 'off') {
-            isOneOff = true;
-            break;
-        }
+    if (!Array.isArray(buttons) || buttons.length === 0) {
+        console.error('Invalid input: buttons array is required and cannot be empty.');
+        return;
     }
-    toggleMasterOnOffBBoxButton(!isOneOff ? 0 : 1);
+
+    const isOneOff = buttons.some($btn => $btn.data(`status`) === 'off');
+    toggleMasterOnOffBBoxButton(isOneOff ? 1 : 0);
 }
+
 
 function toggleMasterOnOffBBoxButton(index) {
     const status = [`on`, `off`];
-    $(`#master-toggle`).data(`status`, status[index]);
-    $(`#master-toggle`).text(masterOnOffButtonTxt[index]);
+
+    // Error handling: Check if index is valid
+    if (index < 0 || index >= status.length) {
+        console.error('Invalid index provided to toggleMasterOnOffBBoxButton.');
+        return;
+    }
+
+    const masterToggle = $(`#master-toggle`);
+    masterToggle.data(`status`, status[index]);
+    masterToggle.text(masterOnOffButtonTxt[index]);
 }
+
 
 // Update a toggle On/Off button and set the opacity of bounding box
 
 function updateToggleOnOffButton(index, toggleButtons, status, runFlag) {
-    const $btn = toggleButtons[index];
-    if (status || status === `on`) {
-        $btn.data(`status`, `on`);
-        $btn.text(`On`);
-        $btn.removeClass(`btn-secondary`)
-        $btn.addClass(`btn-primary`)
-    } else {
-        $btn.data(`status`, `off`);
-        $btn.text(`Off`);
-        $btn.removeClass(`btn-primary`)
-        $btn.addClass(`btn-secondary`)
+    // Error handling: Check if index is valid
+    if (index < 0 || index >= toggleButtons.length) {
+        console.error('Invalid index provided to updateToggleOnOffButton.');
+        return;
     }
-    // update display
-    canvasUtils.setBBoxOpacity(index, status, runFlag);
+    
+    const $btn = toggleButtons[index];
+
+    // Set button status based on the provided status
+    const isActive = status || status === `on`;
+    $btn.data(`status`, isActive ? `on` : `off`);
+    $btn.text(isActive ? `On` : `Off`);
+    $btn.toggleClass(`btn-primary`, isActive).toggleClass(`btn-secondary`, !isActive);
+
+    // Update display
+    canvasUtils.setBBoxOpacity(index, isActive, runFlag);
 }
+
 
 // Update Select/Deselect All Button
 
 function updateDeselectAllButton(table) {
+    if (!table || typeof table.rows !== 'function') {
+        console.error('Invalid table provided to updateDeselectAllButton.');
+        return;
+    }
+
     const count = table.rows({ selected: true }).count();
     const all = table.rows().count();
 
-    if (count === all) {
-        $(`#deselect-all`).prop(`disabled`, false).addClass(`btn-primary`).removeClass(`btn-secondary`);
-        $(`#select-all`).prop(`disabled`, true).removeClass(`btn-primary`).addClass(`btn-secondary`);
-     } else if (count > 0) {
-        $(`#deselect-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-        $(`#select-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-    } else {
-        $(`#deselect-all`).prop(`disabled`, true).addClass(`btn-secondary`).removeClass(`btn-primary`);
-        $(`#select-all`).prop(`disabled`, false).removeClass(`btn-secondary`).addClass(`btn-primary`);
-    }
+    // Initialize button states
+    const deselectButton = $(`#deselect-all`);
+    const selectButton = $(`#select-all`);
+
+    deselectButton.prop(`disabled`, count === 0).toggleClass(`btn-primary`, count > 0).toggleClass(`btn-secondary`, count === 0);
+    selectButton.prop(`disabled`, count === all).toggleClass(`btn-primary`, count < all).toggleClass(`btn-secondary`, count === all);
 }
+
 
 // run this when all page is ready.
 
 $(document).ready(function () {
-    let runFlag = false; // flag to check the run status
-
     // Set action for zoom buttons
 
     $(`#zoom-in`).on(`click`, function () {
@@ -547,18 +556,21 @@ $(document).ready(function () {
         }
     });
 
-    canvas.on(`mouse:move`, function (opt) {
-        if (this.isDragging) {
-            const evt = opt.e;
-            const vpt = this.viewportTransform;
-            const newX = vpt[4] + evt.clientX - this.lastPosX;
-            const newY = vpt[5] + evt.clientY - this.lastPosY;
-            canvasUtils.validateImagePosition(newX, newY);
-            this.requestRenderAll();
-            this.lastPosX = evt.clientX;
-            this.lastPosY = evt.clientY;
-        }
-    });
+    // Handles the mouse movement on the canvas, allowing for dragging of elements
+    // based on user interaction. Applies the validation for image position and 
+    // renders the canvas appropriately.
+        canvas.on(`mouse:move`, function (opt) {
+            if (this.isDragging) {
+                const evt = opt.e;
+                const vpt = this.viewportTransform;
+                const newX = vpt[4] + evt.clientX - this.lastPosX;
+                const newY = vpt[5] + evt.clientY - this.lastPosY;
+                canvasUtils.validateImagePosition(newX, newY);
+                this.requestRenderAll();
+                this.lastPosX = evt.clientX;
+                this.lastPosY = evt.clientY;
+            }
+        });
 
     canvas.on(`mouse:up`, function (opt) {
         // on mouse up we want to recalculate new interaction
@@ -654,36 +666,33 @@ $(document).ready(function () {
     }
 
     $(`#tree`).on(`nodeChecked`, function (event, data) {
-        // If there is children then select all children.
         const children = data.nodes;
+
+        // If there are children, select all children.
         if (children) {
-            for (var i = 0; i < children.length; i++) {
-                const node = children[i];
+            children.forEach(node => {
                 if (!node.state[`checked`]) {
                     $(`#tree`).treeview(`checkNode`, [node.nodeId, { silent: true }]);
                     updateToggleOnOffButton(Number(node.tags[0]) - 1, toggleButtons, true, runFlag);
                 }
-            }
+            });
         } else {
-            // check the parent if all children is checked then parent should be checked.
+            // Check the parent if all children are checked.
             const parent = $(`#tree`).treeview(`getParent`, data.nodeId);
-            //
-            let siblings = $(`#tree`).treeview(`getSiblings`, data.nodeId);
-            let checked_count = 0;
-            siblings.push(data);
+            const siblings = $(`#tree`).treeview(`getSiblings`, data.nodeId).concat(data);
+            const checked_count = siblings.filter(sibling => sibling.state[`checked`]).length;
 
-            for (let i = 0; i < siblings.length; i++) {
-                if (siblings[i].state[`checked`]) {
-                    checked_count++;
-                }
-            }
+            // Check the parent if all siblings are checked
             if (checked_count === siblings.length) {
                 $(`#tree`).treeview(`checkNode`, [parent.nodeId, { silent: true }]);
             }
             updateToggleOnOffButton(Number(data.tags[0]) - 1, toggleButtons, true, runFlag);
         }
+
+        // Update master toggle button
         updateOnOffMaster(toggleButtons);
     });
+
     
     $(`#tree`).on(`nodeUnchecked`, function (event, data) {
         const children = data.nodes;
@@ -725,78 +734,85 @@ $(document).ready(function () {
         event.stopPropagation(); // Prevent row selection
 
         const $btn = $(this);
-        const currentStatus = $btn.data(`status`) === `on`;
         const index = Number($btn.data(`index`)) - 1;
-        // Toggle the status and update button text
-        if (!currentStatus) {
-            $btn.data(`status`, `on`);
-            $btn.text(`On`);
-            $btn.removeClass(`btn-secondary`)
-            $btn.addClass(`btn-primary`)
-        } else {
-            $btn.data(`status`, `off`);
-            $btn.text(`Off`);
-            $btn.removeClass(`btn-primary`)
-            $btn.addClass(`btn-secondary`)
+
+        // Error handling: Check if index is valid
+        if (index < 0 || index >= toggleButtons.length) {
+            console.error('Invalid index provided to toggle button.');
+            return;
         }
-        //
+
+        const isActive = $btn.data(`status`) === `on`;
+        // Toggle the status and update button text
+        $btn.data(`status`, isActive ? `off` : `on`);
+        $btn.text(isActive ? `Off` : `On`);
+        $btn.toggleClass(`btn-primary`, !isActive).toggleClass(`btn-secondary`, isActive);
+
         updateTreeView(index, toggleButtons, treeNodes);
-        canvasUtils.setBBoxOpacity(index, !currentStatus, runFlag);
+        canvasUtils.setBBoxOpacity(index, !isActive, runFlag);
         updateOnOffMaster(toggleButtons);
         this.blur();
     });
+
 
     // ACTION FOR ZOOM TO BOTTOM
 
     table.on(`click`, `.zoom-to-btn`, function (event) {
         event.stopPropagation(); // Prevent row selection
         this.blur();
-        
+
         // If no run then do nothing
-        if (!runFlag) {
-            return;
-        };
-        // Find the bbox that corresponding to clicked button
+        if (!runFlag) return;
+
+        // Find the bbox that corresponds to clicked button
         const index = Number($(this).data(`index`)) - 1;
+
+        // Error handling: Check if the index is valid
+        if (isNaN(index) || index < 0) {
+            console.error('Invalid index provided for zoom action.');
+            return;
+        }
+
         canvasUtils.zoomToBBox(index, runFlag);
     });
 
-    // Master toggle button functionality
+
+        // Master toggle button functionality
     $(`#master-toggle`).on(`click`, function () {
         const $masterBtn = $(this);
         const masterStatus = $masterBtn.data(`status`) === `on`;
+        const newStatus = masterStatus ? `off` : `on`;
+        const newText = masterStatus ? `Off` : `On`;
+        const newClassPrimary = masterStatus ? `btn-secondary` : `btn-primary`;
+        const newClassSecondary = masterStatus ? `btn-primary` : `btn-secondary`;
 
         // Toggle the master button status and update text
-        if (!masterStatus) {
-            toggleMasterOnOffBBoxButton(0);
-            // Toggle all rows to on
-            table.rows().every(function () {
-                const $row = $(this.node());
-                const $btn = $row.find(`.toggle-btn`);
+        toggleMasterOnOffBBoxButton(masterStatus ? 1 : 0);
 
-                $btn.data(`status`, `on`);
-                $btn.text(`On`);
-                $btn.removeClass(`btn-secondary`).addClass(`btn-primary`);
-            });
-        } else {
-            toggleMasterOnOffBBoxButton(1);
-            // Toggle all rows to off
-            table.rows().every(function () {
-                const $row = $(this.node());
-                const $btn = $row.find(`.toggle-btn`);
+        // Toggle all rows to the new status
+        table.rows().every(function () {
+            const $row = $(this.node());
+            const $btn = $row.find(`.toggle-btn`);
+            
+            // Update button status and text
+            $btn.data(`status`, newStatus);
+            $btn.text(newText);
+            $btn.removeClass(newClassSecondary).addClass(newClassPrimary);
+        });
 
-                $btn.data(`status`, `off`);
-                $btn.text(`Off`);
-                $btn.removeClass(`btn-primary`).addClass(`btn-secondary`);
-            });
-        }
-
-        for (let i = 0; i < toggleButtons.length; i++) {
-            updateTreeView(i, toggleButtons, treeNodes)
-            canvasUtils.setBBoxOpacity(i, !masterStatus, runFlag);
-        }
+        // Update tree view and set bounding box opacity
+        toggleButtons.forEach((_, i) => {
+            try {
+                updateTreeView(i, toggleButtons, treeNodes);
+                canvasUtils.setBBoxOpacity(i, !masterStatus, runFlag);
+            } catch (error) {
+                console.error('Error updating tree view or bounding box opacity:', error);
+            }
+        });
+        
         this.blur();
     });
+
 
     $(`#deselect-all`).on(`click`, function () {
         table.rows().deselect();
@@ -848,44 +864,53 @@ $(document).ready(function () {
     // hide file menu button
 
     $(`#toggle-file-menu`).on(`click`, function () {
-        if ($(this).data(`status`) === `show`) {
-            $(`div#select-file-menu`).slideUp();
-            $(this).data(`status`, `hide`);
-        } else {
-            $(`div#select-file-menu`).slideDown();
-            $(this).data(`status`, `show`);
+        try {
+            const $this = $(this);
+            const isShown = $this.data(`status`) === `show`;
+
+            // Toggle visibility and status
+            $(`div#select-file-menu`).slideToggle(); // Toggle visibility based on current state
+            $this.data(`status`, isShown ? `hide` : `show`); // Update status
+
+            this.blur();
+        } catch (error) {
+            console.error('Error toggling file menu:', error);
         }
     });
+
     
     $(`#hide-table-btn`).on(`click`, function () {
-        if ($(this).data(`status`) === `show`) {
-            $(`div#table-container`).hide();
-            $(this).data(`status`, `hide`);
-        } else {
-            $(`div#table-container`).show();
-            $(this).data(`status`, `show`);
+        // Error handling: Ensure the toggled element exists
+        const $this = $(this);
+        const $tableContainer = $(`div#table-container`);
+
+        if (!$tableContainer.length) {
+            console.error('Table container element not found.');
+            return;
         }
+
+        // Toggle visibility and status
+        const isShown = $this.data(`status`) === `show`;
+        $tableContainer.toggle(!isShown);
+        $this.data(`status`, isShown ? `hide` : `show`);
+
+        this.blur();
         adjustGridContainerHeight();
     });
+
     
     // handler for file change
 
+    // handler for file change
     const fileInput = $(`#file-input`);
 
     fileInput.on(`change`, function () {
+        const $submit = $(`#submit`);
         const selectedFile = $(this).val();
 
-        if (selectedFile) {
-            $(`#submit`)
-                .prop(`disabled`, false)
-                .removeClass(`btn-secondary`)
-                .addClass(`btn-primary`);
-        } else {
-            $(`#submit`)
-                .prop(`disabled`, true)
-                .removeClass(`btn-primary`)
-                .addClass(`btn-secondary`);
-        }
+        $submit.prop(`disabled`, !selectedFile)
+            .toggleClass(`btn-primary`, !!selectedFile)
+            .toggleClass(`btn-secondary`, !selectedFile);
     });
     //
     // submitButton event
@@ -907,7 +932,7 @@ $(document).ready(function () {
     $(`#main-form`).on(`submit`, async function (event) {
         let res = await fetch(`/submit`, {
             method: `POST`,
-            body: new FormData($(`#main-form`)),
+            body: new FormData(this),
         });
 
         // Stop other thread
@@ -924,95 +949,112 @@ $(document).ready(function () {
     // Event handling when image is loaded
     //
     $(`#output-image`)
-        .one(`load`, function () {
-        })
-        .each(function () {
-            if (this.complete) {
-                // image is finished loading
-                runFlag = canvasUtils.onImageLoad(this, runFlag);
+        .on(`load`, function () {
+            try {
+                // Only call if image is not already processed
+                if (!this.complete) {
+                    canvasUtils.addItemsToCanvas(this, runFlag);
+                }
+            } catch (error) {
+                console.error('Error while adding items to canvas:', error);
             }
         })
-        .on(`load`, function () {
-            // image is finished loading
-            runFlag = canvasUtils.onImageLoad(this, runFlag);
+        .each(function () {
+            // Handle case when image is already loaded
+            if (this.complete) {
+                try {
+                    canvasUtils.addItemsToCanvas(this, runFlag);
+                } catch (error) {
+                    console.error('Error while adding items to canvas after completion:', error);
+                }
+            }
         });
-    //
+
+        ////
     // Auto adjust grid container height when window change size
     //
     var savedHeight = 0;
     var savedWidth = 0;
 
     function adjustGridContainerHeight() {
-        const windowHeight = $(window).height();
-        const gridContainer = $(`#grid-container`);
-        const canvasContainer = $(`div#canvas-container`);
-        // Calculate the available height for the grid container
-        const containerHeight = Math.max(500, windowHeight - gridContainer.offset().top);
-        // determine current zoom stage
-        // 0 = zoom all
-        // 1 = zoom to fit
-        // -1 not above
-        let zoomStage = canvas.getZoom() === canvasUtils.allZoom() ? 0 : -1;
-        zoomStage = canvas.getZoom() === canvasUtils.toFitZoom() ? 1 : zoomStage;
+        try {
+            const windowHeight = $(window).height();
+            const gridContainer = $(`#grid-container`);
+            const canvasContainer = $(`div#canvas-container`);
 
-        // Set the hegiht of the grid container
-        gridContainer.height(containerHeight);
-        // Save the height difference for the future adjustments
-        if (!savedHeight) {
-            savedHeight = containerHeight - canvasContainer.height();
-        }
-        if (!savedWidth) {
-            savedWidth = gridContainer.width() - canvasContainer.width();
-        }
-        // Adjust the canvas container hegiht based on teh save height difference
-        const tableOffset = $(`#hide-table-btn`).data(`status`) === `show` ? $(`div#table-container`).height() + 15 : 0;
-        const canvasHeight = containerHeight - savedHeight - 30 - tableOffset;
-        const canvasWidth = gridContainer.width() - savedWidth;
+            // Calculate the available height for the grid container
+            const containerHeight = Math.max(500, windowHeight - gridContainer.offset().top);
 
-        canvasContainer.height(canvasHeight);
-        canvasContainer.width(canvasWidth);
-        // set the canvas to new size
-        canvas.setHeight(canvasHeight);
-        canvas.setWidth(canvasWidth);
+            // Determine current zoom stage (0 = zoom all, 1 = zoom to fit)
+            const currentZoom = canvas.getZoom();
+            const zoomStage = currentZoom === canvasUtils.allZoom() ? 0 : currentZoom === canvasUtils.toFitZoom() ? 1 : -1;
 
-        // reset zoom
-        switch (zoomStage) {
-            case 0:
+            // Set the height of the grid container
+            gridContainer.height(containerHeight);
+
+            // Save the height and width difference for future adjustments, if they are not already saved
+            if (!savedHeight) savedHeight = containerHeight - canvasContainer.height();
+            if (!savedWidth) savedWidth = gridContainer.width() - canvasContainer.width();
+
+            // Adjust the canvas container height based on the saved height difference
+            const tableOffset = $(`#hide-table-btn`).data(`status`) === `show` ? $(`div#table-container`).height() + 15 : 0;
+            const boxOffset = runFlag ? 30 : 0;
+            const canvasHeight = containerHeight - savedHeight - boxOffset - tableOffset;
+            const canvasWidth = gridContainer.width() - savedWidth;
+
+            canvasContainer.height(canvasHeight).width(canvasWidth); // Set the canvas to new size
+            canvas.setHeight(canvasHeight);
+            canvas.setWidth(canvasWidth);
+
+            // Reset zoom based on the current zoom stage
+            if (zoomStage === 0) {
                 canvasUtils.zoom(canvasUtils.allZoom(), runFlag);
-                break;
-            case 1:
+            } else if (zoomStage === 1) {
                 canvasUtils.zoom(canvasUtils.toFitZoom(), runFlag);
-                break;
-            default:
-                canvasUtils.zoom(canvasUtils.allZoom(), runFlag);
+            } else if (currentZoom < canvasUtils.minZoom()) {
+                canvasUtils.zoom(canvasUtils.allZoom());
+            } else {
                 canvasUtils.validateImagePosition();
-                break;
+            }
+        } catch (error) {
+            console.error('Error while adjusting grid container height:', error);
         }
     }
 
     // Attach the resize event listener
     $(window).on(`resize`, adjustGridContainerHeight);
 
-    canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
-    updateDeselectAllButton(table);
+    try {
+        canvasUtils.zoom(canvasUtils.minZoom(), runFlag);
+        updateDeselectAllButton(table);
 
-    for (let i = 0; i < toggleButtons.length; i++) {
-        updateTreeView(i, toggleButtons, treeNodes)
+        // Update tree view states for toggle buttons in one go
+        toggleButtons.forEach((_, index) => {
+            updateTreeView(index, toggleButtons, treeNodes);
+        });
+
+        // Handle visibility based on runFlag
+        const toggleFileMenu = () => {
+            $(`#toggle-file-menu`).data(`status`, `hide`);
+            $(`#hide-table-btn`).data(`status`, `hide`);
+            $(`div#select-file-menu`).hide();
+            $(`div#table-container`).hide();
+            $(`div#zoom-menu-container`).show();
+            $('div#last-run-filename').show();
+        };
+
+        const hideTableComponents = () => {
+            $(`#hide-table-btn`).data(`status`, `hide`);
+            $(`div#category-treeview`).hide();
+            $(`div#table-container`).hide();
+        };
+
+        (runFlag ? toggleFileMenu : hideTableComponents)();
+
+        // Call the function initially
+        canvasUtils.zoom(canvasUtils.allZoom(), runFlag);
+        adjustGridContainerHeight();
+    } catch (error) {
+        console.error('Error during initial setup:', error);
     }
-
-    // if runFlag is True then hide select file menu
-    if (runFlag) {
-        $(`#toggle-file-menu`).data(`status`, `hide`);
-        $(`#hide-table-btn`).data(`status`, `hide`); 
-        $(`div#select-file-menu`).hide();
-        $(`div#table-container`).hide();
-    } else {
-        $(`#hide-table-btn`).data(`status`, `hide`); 
-        $(`#hide-table-btn`).hide();
-        $(`div#category-treeview`).hide();
-        $(`div#table-container`).hide();
-    }
-
-    // Call the function initially
-    adjustGridContainerHeight();
 });

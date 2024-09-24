@@ -41,7 +41,7 @@ VERTICAL_TEXT = ["page connection", "line number"]
 
 OUTPUT_PATH = "output"
 CROPPED_OBJECT_PATH = os.path.join(OUTPUT_PATH, "cropped object detected")
-TEXT_PATH = os.path.join(OUTPUT_PATH, "text found")
+TEXT_PATH = os.path.join(OUTPUT_PATH, "text detected")
 MODEL_PATH = "yolo_weights"
 
 def is_mps_available():
@@ -402,12 +402,16 @@ async def inferencing_image_and_text(
             "desc": category_mapping[category_ids_list[i]],
             "count": category_id_found.count(category_ids_list[i]),
         })
+        
+    # Save json data to file in output directory
+    with open(os.path.join(OUTPUT_PATH, "data.json"), "w") as f:
+        json.dump(sorted_data, f)
 
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
-            "runFlag": True,
+            "run_flag": True,
             "table_data": sorted_data,
             "json_data": json_data,
             "model_files": MODEL_LIST,
