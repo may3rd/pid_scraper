@@ -19,6 +19,7 @@ import json
 import math
 import glob
 import os
+import datetime
 
 from pid_scraper import utils as utils
 
@@ -299,7 +300,62 @@ async def inferencing_image_and_text(
 
     # Obtain the prediction list from model results.
     object_prediction_list = result.object_prediction_list
-
+    
+    # Create COCO annotation file
+    coco = {
+        "info": {
+            "year": 2024,
+            "version": "1.0",
+            "description": "COCO format annotation file for object detection",
+            "contributor": "pid_scraper",
+            "url": "https://github.com/may3r/pid_scraper",
+            "date_created": datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S.%f")
+            },
+        "licenses": [{
+            "id": 0,
+            "name": "MIT License",
+            "url": "https://github.com/may3r/pid_scraper/blob/main/LICENSE"
+            }],
+        "images": [],
+        "annotations": [],
+        "categories": []
+    }
+    
+    # Get the image size
+    height, width, _ = original_image.shape
+    
+    image_info = {
+                "id": 0,
+                "file_name": file_input.filename,
+                "width": width,
+                "height": height,
+                "date_captured": "",
+                "license": 0,
+                "coco_url": "",
+                "flickr_url": ""
+            }
+    
+    coco["images"].append(image_info)
+    
+    coco["annotations"] = result.to_coco_annotations()
+    
+    # Change image_id to 0
+    for i in range(len(coco["annotations"])):
+        coco["annotations"][i]["image_id"] = 0
+    
+    # Create category mapping for COCO annotation
+    for category_id, category_name in detection_model.category_mapping.items():
+        category_info = {
+            "id": category_id,
+            "name": category_name,
+            "supercategory": ""
+        }
+        coco["categories"].append(category_info)
+    
+    # Save COCO annotation file
+    with open(os.path.join(OUTPUT_PATH, "coco_annotation.json"), "w") as f:
+        json.dump(coco, f)
+    
     # Crops bounding boxes over the source image and exports to directory
 
     def delete_all_files_in_folder(folder_path):
@@ -330,7 +386,7 @@ async def inferencing_image_and_text(
     print("Found", len(prediction_list), "objects.")
 
     category_object_count = [ 0 for i in range(len(list(detection_model.category_mapping.values())))]
-
+        
     # Extarct bboxes from prediction result
     for prediction in prediction_list:
         bbox = prediction.bbox
