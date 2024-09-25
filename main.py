@@ -270,6 +270,7 @@ async def inferencing_image_and_text(
     # Run the inferencing model
     # use verbose = 2 to see predection time
     print(f"Run the sliced prediction of {image_size}x{image_size} slices.")
+    
     result = get_sliced_prediction(
         processed_image,
         detection_model,
@@ -284,17 +285,17 @@ async def inferencing_image_and_text(
     )
 
     # Extract the result from inferencing model
-    result.export_visuals(
-        export_dir="static/images/",  # save the output picture for display
-        text_size=0.5,
-        rect_th=2,
-        hide_labels=True,
-        hide_conf=True,
-        file_name="prediction_results",  # output file name
-    )
+    #result.export_visuals(
+    #    export_dir="static/images/",  # save the output picture for display
+    #    text_size=0.5,
+    #    rect_th=2,
+    #    hide_labels=True,
+    #    hide_conf=True,
+    #    file_name="prediction_results",  # output file name
+    #)
 
     # Write the original image and the bounding boxes will be created by fabric.js
-    cv2.imwrite('static/images/prediction_visual.png', original_image)
+    cv2.imwrite('static/images/prediction_results.png', original_image)
 
     # Obtain the prediction list from model results.
     object_prediction_list = result.object_prediction_list
@@ -355,7 +356,7 @@ async def inferencing_image_and_text(
             "Width": math.ceil(w),
             "Height": math.ceil(h),
             "Score": round(prediction.score.value, 3),
-            "Text": f"no. {str(category_object_count[object_category_id] + 1)}",
+            "Text": f"{object_category} - no. {str(category_object_count[object_category_id] + 1)}",
         })
 
         category_object_count[object_category_id] = category_object_count[object_category_id] + 1
@@ -363,7 +364,6 @@ async def inferencing_image_and_text(
         # Add current object to symbol with text list
         if object_category in SYMBOL_WITH_TEXT:
             symbol_with_text.append(table_data[-1])
-            table_data[-1]["Text"] = table_data[-1]["Text"] + "(OCR OFF)"
     
     if text_OCR:
         # Extract the text from prediciton

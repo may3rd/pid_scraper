@@ -10,8 +10,8 @@ canvas.selection = false;
 const masterOnOffButtonTxt = ['Hide All B.Box', 'Show All B.Box'];
 
 // Image dimensions (assumed constant for simplicity)
-const imageHeight = 100;
-const imageWidth = 100;
+var imageHeight = 100;
+var imageWidth = 100;
 
 // Utility functions for canvas displaying
 
