@@ -4,7 +4,9 @@ from PIL import Image
 
 def create_coco_images_json(image_dir, output_file):
     coco = {
-        "images": []
+        "images": [],
+        "annotions": [],
+        "categories": []
     }
 
     image_id = 1
@@ -32,6 +34,6 @@ def create_coco_images_json(image_dir, output_file):
         json.dump(coco, f, indent=4)
 
 # Usage
-image_dir = 'PTTEP'
+image_dir = 'PTTEP/ER'
 output_file = 'coco_images.json'
 create_coco_images_json(image_dir, output_file)
