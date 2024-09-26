@@ -174,3 +174,4 @@ static/images/prediction*
 # include
 !datasets/template/
 !datasets/yaml/
+.DS_Store

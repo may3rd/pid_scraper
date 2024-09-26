@@ -1,13 +1,31 @@
 import os
 import json
+import yaml
 from PIL import Image
 
-def create_coco_images_json(image_dir, output_file):
+def load_categories_from_yaml(yaml_file):
+    with open(yaml_file, 'r') as f:
+        categories = yaml.safe_load(f)
+    
+    return categories
+
+def create_coco_images_json(image_dir, output_file, category_file):
     coco = {
         "images": [],
-        "annotions": [],
+        "annotations": [],
         "categories": []
     }
+
+    # Load categories from the YAML file
+    categories = load_categories_from_yaml(category_file)
+    
+    # Populate coco categories
+    for category in categories:
+        coco["categories"].append({
+            "id": category['id'],
+            "name": category['name'],
+            "supercategory": category.get('supercategory', '')
+        })
 
     image_id = 1
 
@@ -36,4 +54,6 @@ def create_coco_images_json(image_dir, output_file):
 # Usage
 image_dir = 'PTTEP/ER'
 output_file = 'coco_images.json'
-create_coco_images_json(image_dir, output_file)
+category_file = 'categories.yaml'  # Your YAML file with categories
+create_coco_images_json(image_dir, output_file, category_file)
+
