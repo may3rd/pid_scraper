@@ -99,7 +99,7 @@
   <div id="main-container" class="container-fluid m-0 p-0">
     <div id="grid-container" class="grid-container">
       <div class="canvas-container m-0" id="canvas-container">
-        <div id="last-run-filename" class="lead text-center small-font bg-body-secondary border rounded mb-1 p-1 hidden">{{ input_filename }}</div>
+        <div id="last-run-filename" class="lead text-center small-font bg-body-secondary border rounded mb-1 p-1 hidden">{{ output_text }}</div>
         <canvas id="canvas" class="border shadow-sm mb-5 rounded"></canvas>
         {% if run_flag %}
         <img id="output-image" src="{{ url_for('static', path='images/prediction_results.png') }}" alt=""
@@ -196,9 +196,9 @@
               </div>
               <div id="weight-path-container" class="row align-items-center mt-1">
                 <div class="col">
-                  <label for="model_file" class="form-label mb-0">Weight file: </label>
-                  <select id="model_file" class="form-select form-select-sm" name="model_file">
-                    {% for item in model_files %}
+                  <label for="weight_file" class="form-label mb-0">Weight file: </label>
+                  <select id="weight_file" class="form-select form-select-sm" name="weight_file">
+                    {% for item in weight_files %}
                     <option value="{{ item.item }}">{{ item.item }}</option>
                     {% endfor %}
                   </select>

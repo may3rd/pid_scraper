@@ -48,20 +48,20 @@ MODEL_PATH = "yolo_weights"
 def is_mps_available():
     return torch.backends.mps.is_available()
 
-def list_model_files(model_paths: list=[os.path.join(MODEL_PATH, "*.onnx"),
+def list_weight_files(weight_paths: list=[os.path.join(MODEL_PATH, "*.onnx"),
                                            os.path.join(MODEL_PATH, "*.pt")]) -> list:
     """
-    Return the list of model in the `model_paths` paths.
+    Return the list of model in the `weight_paths` paths.
     """
-    model_files = []
+    weight_files = []
 
-    for path in model_paths:
+    for path in weight_paths:
         file_list = glob.glob(path)
         file_list.sort()
         for item in file_list:
-            model_files.append({"item": item})
+            weight_files.append({"item": item})
 
-    return model_files
+    return weight_files
 
 
 def list_config_files() -> list:
@@ -78,7 +78,7 @@ def list_config_files() -> list:
     return config_files
 
 
-MODEL_LIST = list_model_files()
+MODEL_LIST = list_weight_files()
 CONFIG_FILE_LIST = list_config_files()
 
 
@@ -185,10 +185,11 @@ async def main(request: Request):
             "runFlag": False,
             "table_data": table_data,
             "json_data": json_data,
-            "model_files": MODEL_LIST,
+            "weight_files": MODEL_LIST,
             "config_files": CONFIG_FILE_LIST,
             "model_types": MODEL_TYPES,
-            "input_filename": "Not run yet!",
+            "input_filename": "",
+            "output_text": "Not run yet!",
             "category_id": checkboxes,
         }
     )
@@ -202,7 +203,7 @@ async def inferencing_image_and_text(
         request: Request,
         file_input: UploadFile = File(...),
         selected_model: str = Form("yolov8"),
-        model_file: str = Form(os.path.join(MODEL_PATH, "yolov8_640_20231022.pt")),
+        weight_file: str = Form(os.path.join(MODEL_PATH, "yolov8_640_20231022.pt")),
         config_file: str = Form("datasets/yaml/data.yaml"),
         conf_th: float = Form(0.8),
         image_size: int = Form(640),
@@ -223,13 +224,13 @@ async def inferencing_image_and_text(
 
     # Create inferencing model
     print("start detecting by using", selected_model, "model with conf =", conf_th)
-    print("model_path is", model_file)
+    print("weight_path is", weight_file)
 
     # Set category_mapping for ONNX model, required by updated version of SAHI
     if "yolov8onnx" == selected_model:
         import onnx
         import ast
-        model = onnx.load(model_file)
+        model = onnx.load(weight_file)
         props = { p.key: p.value for p in model.metadata_props }
         names = ast.literal_eval(props['names'])
         category_mapping = { str(key): value for key, value in names.items() }
@@ -252,7 +253,7 @@ async def inferencing_image_and_text(
     # Set up the model to be used for inferencing.
     detection_model = AutoDetectionModel.from_pretrained(
         model_type=selected_model,
-        model_path=model_file,
+        model_path=weight_file,
         config_path=config_file,
         confidence_threshold=conf_th,
         category_mapping=category_mapping,
@@ -382,18 +383,20 @@ async def inferencing_image_and_text(
     # Get the prediction list from inferenced result
     prediction_list = result.object_prediction_list
 
-    input_filename = str(input_filename) + f": found {str(len(prediction_list))} objects."
+    output_text = str(input_filename) + f": found {str(len(prediction_list))} objects."
     print("Found", len(prediction_list), "objects.")
 
-    category_object_count = [ 0 for i in range(len(list(detection_model.category_mapping.values())))]
+    category_object_count = [0 for i in range(len(list(detection_model.category_mapping.values())))]
         
     # Extarct bboxes from prediction result
     for prediction in prediction_list:
         bbox = prediction.bbox
-        x = bbox.minx
-        y = bbox.miny
-        w = bbox.maxx - x
-        h = bbox.maxy - y
+        x_min = bbox.minx
+        y_min = bbox.miny
+        x_max = bbox.maxx
+        y_max = bbox.maxy
+        width = x_max - x_min
+        height = y_max - y_min
         object_category = prediction.category.name
         object_category_id = prediction.category.id
         index += 1
@@ -407,10 +410,10 @@ async def inferencing_image_and_text(
             "Object": object_category,
             "CategoryID": object_category_id,
             "ObjectID": category_object_count[object_category_id] + 1,
-            "Left": math.floor(x),
-            "Top": math.floor(y),
-            "Width": math.ceil(w),
-            "Height": math.ceil(h),
+            "Left": math.floor(x_min),
+            "Top": math.floor(y_min),
+            "Width": math.ceil(width),
+            "Height": math.ceil(height),
             "Score": round(prediction.score.value, 3),
             "Text": f"{object_category} - no. {str(category_object_count[object_category_id] + 1)}",
         })
@@ -423,7 +426,7 @@ async def inferencing_image_and_text(
     
     if text_OCR:
         # Extract the text from prediciton
-        input_filename = input_filename + f": {len(symbol_with_text)} objects with text."
+        output_text = output_text + f": {len(symbol_with_text)} objects with text."
         print("Found", len(symbol_with_text), "object to be text.")
         delete_all_files_in_folder(TEXT_PATH)
 
@@ -470,10 +473,11 @@ async def inferencing_image_and_text(
             "run_flag": True,
             "table_data": sorted_data,
             "json_data": json_data,
-            "model_files": MODEL_LIST,
+            "weight_files": MODEL_LIST,
             "config_files": CONFIG_FILE_LIST,
             "model_types": MODEL_TYPES,
             "input_filename": input_filename,
+            "output_text": output_text,
             "category_id": checkboxes,
         }
     )
